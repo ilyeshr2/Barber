@@ -8,7 +8,7 @@
           <Label text="Appointments" class="app-title" col="1" />
           <Image src="~/assets/images/pelo-icon.png" class="app-icon" col="2" />
         </GridLayout>
-        
+
         <!-- Contenu principal -->
         <GridLayout row="1" rows="auto, *">
           <!-- Message de bienvenue -->
@@ -16,16 +16,16 @@
             <Label :text="'Bonjour, ' + userName" class="welcome-text" />
             <Button text="Laissez-nous un commentaire" class="review-button" />
           </StackLayout>
-          
+
           <!-- Si pas connecté -->
           <StackLayout v-if="!isLoggedIn" row="1" class="login-prompt">
             <Label text="Vous devez être connecté pour voir vos rendez-vous" class="login-message" textWrap="true" />
             <Button text="Se connecter" @tap="allerConnexion" class="login-button" />
           </StackLayout>
-          
+
           <!-- Loading indicator -->
           <ActivityIndicator v-else-if="loading" busy="true" color="#FFCC33" row="1" />
-          
+
           <!-- Liste des rendez-vous -->
           <ScrollView v-else row="1">
             <StackLayout class="appointments-container">
@@ -34,14 +34,14 @@
                 <Label text="Vous n'avez aucun rendez-vous" class="no-appointments-text" textWrap="true" />
                 <Button text="Prendre rendez-vous" @tap="allerBarbiers" class="book-button" />
               </StackLayout>
-              
+
               <!-- Prochain rendez-vous -->
               <GridLayout v-else columns="auto, *, auto" class="next-appointment">
                 <Image src="~/assets/images/calendar-icon-alt.png" class="calendar-icon" col="0" />
                 <Label :text="'Next appointment\n' + formatNextAppointment()" class="next-text" col="1" />
                 <Button text="×" class="delete-btn" col="2" @tap="annulerProchainRendezVous()" />
               </GridLayout>
-              
+
               <!-- Liste des rendez-vous -->
               <StackLayout class="appointment-list">
                 <StackLayout v-for="rdv in rendezVous" :key="rdv.id" class="appointment-card">
@@ -56,13 +56,13 @@
                   <Button text="Cancel appointment" @tap="annulerRendezVous(rdv.id)" class="cancel-btn" />
                 </StackLayout>
               </StackLayout>
-              
+
               <!-- Message d'erreur -->
               <Label v-if="error" class="error-message" :text="error" textWrap="true" />
             </StackLayout>
           </ScrollView>
         </GridLayout>
-        
+
         <!-- Barre de navigation -->
         <GridLayout columns="*, *, *, *" class="nav-bar" row="2">
           <StackLayout col="0" class="nav-item" @tap="allerVersPage('PeloStudio')">
@@ -85,12 +85,12 @@
       </GridLayout>
     </Page>
   </template>
-  
+
   <script>
   import { rendezVousService, authService } from '../services/api';
   import { formatDisplayDate, formatDisplayTime } from '../utils/helpers';
   import { confirm } from '@nativescript/core/ui/dialogs';
-  
+
   export default {
     data() {
       return {
@@ -116,7 +116,7 @@
     mounted() {
       this.loadAppointments();
       this.refreshUserInfo();
-      
+
       // Set up event handler for page navigation
       const page = this.$el.nativeView;
       if (page) {
@@ -136,13 +136,13 @@
           this.loading = false;
           return;
         }
-        
+
         this.loading = true;
         this.error = null;
-        
+
         try {
           this.rendezVous = await rendezVousService.getUserAppointments();
-          
+
           // Sort by date
           this.rendezVous.sort((a, b) => new Date(a.date) - new Date(b.date));
         } catch (error) {
@@ -152,49 +152,49 @@
           this.loading = false;
         }
       },
-      
+
       formatNextAppointment() {
         if (this.rendezVous.length === 0) return '';
         const rdv = this.rendezVous[0];
         return `${formatDisplayDate(rdv.date)} - ${formatDisplayTime(rdv.date)} with ${this.getBarberName(rdv)}`;
       },
-      
+
       formatAppointmentDate(date) {
         return `${formatDisplayDate(date)} - ${formatDisplayTime(date)}`;
       },
-      
+
       getBarberName(rdv) {
         return rdv.Barbier ? rdv.Barbier.nom : 'Unknown';
       },
-      
+
       getServiceName(rdv) {
         return rdv.Service ? rdv.Service.nom : 'Unknown';
       },
-      
+
       getServicePrice(rdv) {
         return rdv.Service ? rdv.Service.prix : 0;
       },
-      
+
       allerVersPage(page) {
         if (page === 'Rendez-vous') {
           return; // Déjà sur cette page
         }
         this.$navigateTo(require(`./${page}`).default);
       },
-      
+
       allerConnexion() {
         this.$navigateTo(require('./Connexion').default);
       },
-      
+
       allerBarbiers() {
         this.$navigateTo(require('./Barbiers').default);
       },
-      
+
       annulerProchainRendezVous() {
         if (this.rendezVous.length === 0) return;
         this.annulerRendezVous(this.rendezVous[0].id);
       },
-      
+
       async annulerRendezVous(id) {
         const result = await confirm({
           title: "Annuler le rendez-vous",
@@ -202,11 +202,11 @@
           okButtonText: "Oui",
           cancelButtonText: "Non"
         });
-        
+
         if (result) {
           try {
             await rendezVousService.cancelAppointment(id);
-            
+
             // Reload appointments
             this.loadAppointments();
           } catch (error) {
@@ -215,11 +215,11 @@
           }
         }
       },
-      
+
       refreshUserInfo() {
         this.userInfo = authService.getUser();
       },
-      
+
       onNavigatedTo() {
         this.refreshUserInfo();
         // Also reload appointments when coming back to this page
@@ -230,43 +230,43 @@
     }
   };
   </script>
-  
+
   <style scoped>
   .header {
     background-color: #000000;
     padding: 10;
     height: 50;
   }
-  
+
   .user-avatar {
     width: 40;
     height: 40;
     border-radius: 20;
   }
-  
+
   .app-title {
     color: #ffffff;
     font-size: 20;
     font-weight: bold;
     text-align: center;
   }
-  
+
   .app-icon {
     width: 30;
     height: 30;
   }
-  
+
   .welcome-container {
     background-color: #000000;
     padding: 10;
   }
-  
+
   .welcome-text {
     color: #999999;
     font-size: 16;
     margin-bottom: 10;
   }
-  
+
   .review-button {
     background-color: #333333;
     color: #FFCC33;
@@ -276,21 +276,21 @@
     height: 40;
     margin-bottom: 15;
   }
-  
+
   .login-prompt {
     background-color: #000000;
     padding: 20;
     justify-content: center;
     align-items: center;
   }
-  
+
   .login-message {
     color: #ffffff;
     font-size: 16;
     text-align: center;
     margin-bottom: 20;
   }
-  
+
   .login-button {
     background-color: #FFCC33;
     color: #000000;
@@ -300,23 +300,23 @@
     width: 200;
     height: 50;
   }
-  
+
   .appointments-container {
     background-color: #000000;
     padding: 10;
   }
-  
+
   .no-appointments {
     margin: 30;
     text-align: center;
   }
-  
+
   .no-appointments-text {
     color: #ffffff;
     font-size: 16;
     margin-bottom: 20;
   }
-  
+
   .book-button {
     background-color: #FFCC33;
     color: #000000;
@@ -325,7 +325,7 @@
     height: 40;
     width: 200;
   }
-  
+
   .next-appointment {
   background-color: #333333;
   border-radius: 10;
@@ -382,40 +382,40 @@
   font-size: 14;
   margin-top: 10;
 }
-  
+
   .error-message {
     color: #ff4d4d;
     text-align: center;
     margin: 20;
   }
-  
+
   .nav-bar {
     background-color: #000000;
-    border-top-width: 1;
-    border-top-color: #333333;
-    height: 60;
+      border-top-color: #333333;
+      height: 70;
+      padding-bottom: 5;
   }
-  
+
   .nav-item {
     text-align: center;
     padding: 10;
   }
-  
+
   .nav-icon {
     width: 24;
     height: 24;
     margin-bottom: 3;
   }
-  
+
   .nav-text {
     color: #999999;
     font-size: 12;
   }
-  
+
   .active .nav-text {
     color: #FFCC33;
   }
-  
+
   .active .nav-icon {
     filter: sepia(100%) saturate(10000%) hue-rotate(20deg);
   }

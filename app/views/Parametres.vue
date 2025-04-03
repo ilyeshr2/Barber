@@ -7,7 +7,7 @@
         <Image src="~/assets/images/yaniso-logo.png" class="app-icon" col="1" />
         <Label text="Settings" class="settings-title" col="0" />
       </GridLayout>
-      
+
       <!-- Contenu principal -->
       <ScrollView row="1">
         <StackLayout class="settings-container">
@@ -17,7 +17,7 @@
             <Label :text="userName" class="profile-name" />
             <Label :text="userPhone" class="profile-phone" textWrap="true" />
           </StackLayout>
-          
+
           <!-- Options de paramètres -->
           <StackLayout class="settings-options">
             <!-- Mes informations -->
@@ -26,7 +26,7 @@
               <Label text="My Informations" class="setting-text" col="1" />
               <Image src="~/assets/images/arrow-right.png" class="arrow-icon" col="2" />
             </GridLayout>
-            
+
             <!-- Mode sombre -->
             <GridLayout columns="auto, *, auto" class="setting-item">
               <Image src="~/assets/images/moon.png" class="setting-icon" col="0" />
@@ -37,7 +37,7 @@
                 </GridLayout>
               </StackLayout>
             </GridLayout>
-            
+
             <!-- À propos -->
             <GridLayout columns="auto, *, auto" class="setting-item" @tap="allerVersAPropos">
               <Image src="~/assets/images/info.png" class="setting-icon" col="0" />
@@ -45,13 +45,13 @@
               <Image src="~/assets/images/arrow-right.png" class="arrow-icon" col="2" />
             </GridLayout>
           </StackLayout>
-          
+
           <!-- Déconnexion / Connexion -->
           <Button v-if="isLoggedIn" text="Log Out" @tap="deconnexion" class="logout-button" />
           <Button v-else text="Log In" @tap="connexion" class="login-button" />
         </StackLayout>
       </ScrollView>
-      
+
       <!-- Barre de navigation -->
       <GridLayout columns="*, *, *, *" class="nav-bar" row="2">
         <StackLayout col="0" class="nav-item" @tap="allerVersPage('PeloStudio')">
@@ -60,15 +60,15 @@
         </StackLayout>
         <StackLayout col="1" class="nav-item" @tap="allerVersPage('Barbiers')">
           <Image src="~/assets/images/cut.png" class="nav-icon" />
-          <Label text="Barbers" class="nav-text" />
+          <Label text="Barbiers" class="nav-text" />
         </StackLayout>
         <StackLayout col="2" class="nav-item" @tap="allerVersPage('Rendez-vous')">
           <Image src="~/assets/images/calendar.png" class="nav-icon" />
-          <Label text="Appointments" class="nav-text" />
+          <Label text="Rendez-vous" class="nav-text" />
         </StackLayout>
         <StackLayout col="3" class="nav-item active" @tap="allerVersPage('Parametres')">
           <Image src="~/assets/images/settings.png" class="nav-icon" />
-          <Label text="Settings" class="nav-text" />
+          <Label text="Parametres" class="nav-text" />
         </StackLayout>
       </GridLayout>
     </GridLayout>
@@ -104,7 +104,7 @@ export default {
         console.log('Phone from userInfo:', this.userInfo.telephone);
         return this.userInfo.telephone;
       }
-      
+
       // Default phone
       return '+1 557 40 37 30';
     }
@@ -112,13 +112,13 @@ export default {
   mounted() {
     this.refreshUserInfo();
     this.ensurePhoneNumber();
-    
+
     // Set up event handler for page navigation
     const page = this.$el.nativeView;
     if (page) {
       page.on('navigatedTo', this.onNavigatedTo);
     }
-    
+
     // If logged in and this is first load, fetch profile
     if (this.isLoggedIn && this.isFirstLoad) {
       this.fetchProfile();
@@ -139,7 +139,7 @@ export default {
       }
       this.$navigateTo(require(`./${page}`).default);
     },
-    
+
     allerVersMesInformations() {
       if (!this.isLoggedIn) {
         // If not logged in, show confirmation dialog
@@ -158,15 +158,15 @@ export default {
         this.$navigateTo(require('./MesInformations').default);
       }
     },
-    
+
     allerVersAPropos() {
       this.$navigateTo(require('./APropos').default);
     },
-    
+
     connexion() {
       this.$navigateTo(require('./Connexion').default);
     },
-    
+
     async deconnexion() {
       const result = await confirm({
         title: "Log Out",
@@ -174,7 +174,7 @@ export default {
         okButtonText: "Yes",
         cancelButtonText: "No"
       });
-      
+
       if (result) {
         authService.logout();
         this.$navigateTo(require('./Connexion').default, {
@@ -182,12 +182,12 @@ export default {
         });
       }
     },
-    
+
     refreshUserInfo() {
       this.userInfo = authService.getUser();
       console.log('User info refreshed:', this.userInfo);
     },
-    
+
     ensurePhoneNumber() {
       // If user exists but has no phone number, add it
       if (this.userInfo && !this.userInfo.telephone) {
@@ -196,15 +196,15 @@ export default {
           ...this.userInfo,
           telephone: '+1 557 40 37 30'
         };
-        
+
         // Update in authService
         authService.updateUserInfo(updatedUserInfo);
-        
+
         // Refresh our local copy
         this.refreshUserInfo();
       }
     },
-    
+
     async fetchProfile() {
       try {
         console.log('Fetching user profile');
@@ -215,12 +215,12 @@ export default {
         console.error('Error fetching profile:', error);
       }
     },
-    
+
     onNavigatedTo() {
       this.refreshUserInfo();
       this.ensurePhoneNumber();
     },
-    
+
     toggleDarkMode() {
       this.darkModeEnabled = !this.darkModeEnabled;
       // Here you would implement the actual dark mode logic

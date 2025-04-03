@@ -1,314 +1,349 @@
 <!-- app/views/Barbiers.vue -->
 <template>
-    <Page actionBarHidden="true">
-      <GridLayout rows="auto, *, auto">
-        <!-- En-tête -->
-        <GridLayout columns="auto, *, auto" class="header" row="0">
-          <Image :src="userAvatar" class="user-avatar" col="0" />
-          <Label text="Barbiers" class="app-title" col="1" />
-          <Image src="~/assets/images/pelo-icon.png" class="app-icon" col="2" />
-        </GridLayout>
-        
-        <!-- Contenu principal (liste des barbiers) -->
-        <GridLayout row="1" rows="auto, *">
-          <!-- Message de bienvenue -->
-          <StackLayout row="0" class="welcome-container">
-            <Label :text="'Bonjour, ' + userName" class="welcome-text" />
-            <Button text="Laissez-nous un commentaire" class="review-button" />
-          </StackLayout>
-          
-          <!-- Loading indicator -->
-          <ActivityIndicator v-if="loading" busy="true" color="#FFCC33" row="1" />
-          
-          <!-- Liste des barbiers -->
-          <ScrollView v-else row="1">
-            <StackLayout class="barbiers-container">
-              <!-- Information du salon -->
-              <GridLayout columns="auto, *" class="salon-info">
-                <Image src="~/assets/images/shop-icon.png" class="shop-icon" col="0" />
-                <Label text="Le Pelo Cité Djamel, Oran" class="salon-name" col="1" />
-              </GridLayout>
-              
-              <!-- Liste des barbiers -->
-              <StackLayout class="barbier-card" v-for="barbier in barbiers" :key="barbier.id" @tap="voirDetailsBarbier(barbier)">
-                <Image :src="getBarbierImage(barbier)" class="barbier-photo" stretch="aspectFill" />
-                <GridLayout columns="*, auto" class="barbier-info">
-                  <StackLayout col="0">
-                    <Label :text="barbier.nom" class="barbier-name" />
-                    <Label text="Barber" class="barbier-title" />
-                  </StackLayout>
-                  <StackLayout col="1" class="rating-container">
-                    <Label :text="barbier.note.toFixed(1)" class="rating-value" />
-                    <Label text="★" class="rating-star" />
-                  </StackLayout>
-                </GridLayout>
-              </StackLayout>
-              
-              <!-- Message d'erreur -->
-              <Label v-if="error" class="error-message" :text="error" textWrap="true" />
-            </StackLayout>
-          </ScrollView>
-        </GridLayout>
-        
-        <!-- Barre de navigation -->
-        <GridLayout columns="*, *, *, *" class="nav-bar" row="2">
-          <StackLayout col="0" class="nav-item" @tap="allerVersPage('PeloStudio')">
-            <Image src="~/assets/images/home-icon.png" class="nav-icon" />
-            <Label text="Pelo Studio" class="nav-text" />
-          </StackLayout>
-          <StackLayout col="1" class="nav-item active" @tap="allerVersPage('Barbiers')">
-            <Image src="~/assets/images/barber-icon.png" class="nav-icon" />
-            <Label text="Barbiers" class="nav-text" />
-          </StackLayout>
-          <StackLayout col="2" class="nav-item" @tap="allerVersPage('Rendez-vous')">
-            <Image src="~/assets/images/calendar-icon.png" class="nav-icon" />
-            <Label text="Rendez-vous" class="nav-text" />
-          </StackLayout>
-          <StackLayout col="3" class="nav-item" @tap="allerVersPage('Parametres')">
-            <Image src="~/assets/images/settings-icon.png" class="nav-icon" />
-            <Label text="Paramètres" class="nav-text" />
-          </StackLayout>
-        </GridLayout>
+  <Page actionBarHidden="true">
+    <GridLayout rows="auto, *, auto">
+      <!-- Header -->
+      <GridLayout row="0" columns="auto, *, auto" class="header">
+        <Image src="~/assets/images/user-avatar.png" class="user-avatar" col="0" />
+        <Image src="~/assets/images/yaniso-logo.png" class="app-logo" col="2" />
       </GridLayout>
-    </Page>
-  </template>
-  
-  <script>
-  import { barbierService, authService } from '../services/api';
-  
-  export default {
-    data() {
-      return {
-        barbiers: [],
-        loading: true,
-        error: null,
-        userAvatar: '~/assets/images/user-avatar.png',
-        userInfo: null
-      };
-    },
-    computed: {
-      userName() {
-        if (this.userInfo && this.userInfo.prenom) {
-          return this.userInfo.prenom;
-        }
-        const user = authService.getUser();
-        return user ? user.prenom : 'Invité';
+
+      <!-- Main content area -->
+      <ScrollView row="1" class="content-area">
+        <StackLayout>
+          <!-- Welcome section -->
+          <StackLayout class="welcome-section">
+            <Label text="Barbers" class="page-title" col="1" />
+            <Label :text="'Hello, ' + userName" class="welcome-text" />
+            <Button text="Leave us a review" class="review-button" />
+          </StackLayout>
+
+          <!-- Salon info -->
+          <GridLayout columns="auto, *" class="salon-info">
+            <StackLayout  class="store-box">
+            <Image src="~/assets/images/shop-icon.png" class="salon-icon" col="0" />
+          </StackLayout>
+            <Label text="Le Pelo Cité Djamel, Oran" class="salon-name" col="1" />
+          </GridLayout>
+
+          <!-- Loading indicator -->
+          <ActivityIndicator v-if="loading" busy="true" color="#FFCC33" />
+
+          <!-- Barbers list -->
+          <StackLayout v-if="!loading" class="barbers-list">
+            <StackLayout v-for="barbier in barbiers" :key="barbier.id" class="barber-card" @tap="voirDetailsBarbier(barbier)">
+              <Image :src="getBarbierImage(barbier)" class="barber-image" stretch="aspectFill" />
+              <GridLayout columns="*, auto" rows="auto" class="barber-info-container">
+                <StackLayout col="0" class="barber-info">
+                  <Label :text="barbier.nom" class="barber-name" />
+                  <Label text="Barber" class="barber-title" />
+                </StackLayout>
+                <StackLayout col="1" class="rating-container">
+                  <GridLayout columns="auto, auto" rows="auto">
+                    <Label :text="barbier.note.toFixed(1)" class="rating-value" col="0" />
+                    <Label text="★" class="rating-star" col="1" />
+                  </GridLayout>
+                </StackLayout>
+              </GridLayout>
+            </StackLayout>
+          </StackLayout>
+
+          <!-- Error message -->
+          <Label v-if="error" class="error-message" :text="error" textWrap="true" />
+        </StackLayout>
+      </ScrollView>
+
+      <!-- Bottom navigation bar -->
+      <GridLayout row="2" columns="*, *, *, *" class="nav-bar">
+        <StackLayout col="0" class="nav-item" @tap="allerVersPage('PeloStudio')">
+          <Image src="~/assets/images/home-icon.png" class="nav-icon" />
+          <Label text="Pelo Studio" class="nav-text" />
+        </StackLayout>
+        <StackLayout col="1" class="nav-item active" @tap="allerVersPage('Barbiers')">
+          <Image src="~/assets/images/barber-icon.png" class="nav-icon" />
+          <Label text="Barbers" class="nav-text" />
+        </StackLayout>
+        <StackLayout col="2" class="nav-item" @tap="allerVersPage('Rendez-vous')">
+          <Image src="~/assets/images/calendar-icon.png" class="nav-icon" />
+          <Label text="Appointments" class="nav-text" />
+        </StackLayout>
+        <StackLayout col="3" class="nav-item" @tap="allerVersPage('Parametres')">
+          <Image src="~/assets/images/settings-icon.png" class="nav-icon" />
+          <Label text="Settings" class="nav-text" />
+        </StackLayout>
+      </GridLayout>
+    </GridLayout>
+  </Page>
+</template>
+
+<script>
+import { barbierService, authService } from '../services/api';
+
+export default {
+  data() {
+    return {
+      barbiers: [],
+      loading: true,
+      error: null,
+      userInfo: null
+    };
+  },
+  computed: {
+    userName() {
+      if (this.userInfo && this.userInfo.prenom) {
+        return this.userInfo.prenom;
       }
-    },
-    mounted() {
-      this.loadBarbers();
-      this.refreshUserInfo();
-      
-      // Set up event handler for page navigation
-      const page = this.$el.nativeView;
-      if (page) {
-        page.on('navigatedTo', this.onNavigatedTo);
-      }
-    },
-    beforeDestroy() {
-      // Clean up event handler
-      const page = this.$el.nativeView;
-      if (page) {
-        page.off('navigatedTo', this.onNavigatedTo);
-      }
-    },
-    methods: {
-      async loadBarbers() {
-        this.loading = true;
-        this.error = null;
-        
-        try {
-          this.barbiers = await barbierService.getAllBarbers();
-        } catch (error) {
-          console.error('Error loading barbers:', error);
-          this.error = 'Erreur lors du chargement des barbiers';
-        } finally {
-          this.loading = false;
-        }
-      },
-      
-      allerVersPage(page) {
-        if (page === 'Barbiers') {
-          return; // Déjà sur cette page
-        }
-        this.$navigateTo(require(`./${page}`).default);
-      },
-      
-      voirDetailsBarbier(barbier) {
-        this.$navigateTo(require('./DetailsBarbier').default, {
-          props: { barbierId: barbier.id }
-        });
-      },
-      
-      getBarbierImage(barbier) {
-        // Fallback to default image if photoUrl is missing or invalid
-        if (!barbier.photoUrl || barbier.photoUrl.includes('imgur')) {
-          return `~/assets/images/barber-${barbier.id}.jpg`;
-        }
-        return barbier.photoUrl;
-      },
-      
-      refreshUserInfo() {
-        this.userInfo = authService.getUser();
-      },
-      
-      onNavigatedTo() {
-        this.refreshUserInfo();
-      }
+      const user = authService.getUser();
+      return user ? user.prenom : 'Citric acid';
     }
-  };
-  </script>
-  
-  <style scoped>
-  .header {
-    background-color: #000000;
-    padding: 10;
-    height: 50;
+  },
+  mounted() {
+    this.loadBarbers();
+    this.refreshUserInfo();
+
+    // Set up event handler for page navigation
+    const page = this.$el.nativeView;
+    if (page) {
+      page.on('navigatedTo', this.onNavigatedTo);
+    }
+  },
+  beforeDestroy() {
+    // Clean up event handler
+    const page = this.$el.nativeView;
+    if (page) {
+      page.off('navigatedTo', this.onNavigatedTo);
+    }
+  },
+  methods: {
+    async loadBarbers() {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        this.barbiers = await barbierService.getAllBarbers();
+      } catch (error) {
+        console.error('Error loading barbers:', error);
+        this.error = 'Error loading barbers';
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    allerVersPage(page) {
+      if (page === 'Barbiers') {
+        return; // Already on this page
+      }
+      this.$navigateTo(require(`./${page}`).default);
+    },
+
+    voirDetailsBarbier(barbier) {
+      this.$navigateTo(require('./DetailsBarbier').default, {
+        props: { barbierId: barbier.id }
+      });
+    },
+
+    getBarbierImage(barbier) {
+      // Fallback to default image if photoUrl is missing or invalid
+      if (!barbier.photoUrl || barbier.photoUrl.includes('imgur')) {
+        return `~/assets/images/barber-${barbier.id}.jpg`;
+      }
+      return barbier.photoUrl;
+    },
+
+    refreshUserInfo() {
+      this.userInfo = authService.getUser();
+    },
+
+    onNavigatedTo() {
+      this.refreshUserInfo();
+    }
   }
-  
-  .user-avatar {
-    width: 40;
-    height: 40;
-    border-radius: 20;
-  }
-  
-  .app-title {
-    color: #ffffff;
-    font-size: 20;
-    font-weight: bold;
-    text-align: center;
-  }
-  
-  .app-icon {
-    width: 30;
-    height: 30;
-  }
-  
-  .welcome-container {
-    background-color: #000000;
-    padding: 10;
-  }
-  
-  .welcome-text {
-    color: #999999;
-    font-size: 16;
-    margin-bottom: 10;
-  }
-  
-  .review-button {
-    background-color: #333333;
-    color: #FFCC33;
-    border-width: 1;
-    border-color: #FFCC33;
-    border-radius: 20;
-    height: 40;
-    margin-bottom: 15;
-  }
-  
-  .barbiers-container {
-    background-color: #000000;
-    padding: 10;
-  }
-  
-  .salon-info {
-    margin-top: 10;
-    margin-bottom: 15;
-  }
-  
-  .shop-icon {
-    width: 24;
-    height: 24;
-  }
-  
-  .salon-name {
-    color: #ffffff;
-    font-size: 16;
-    margin-left: 5;
-  }
-  
-  .barbier-card {
+};
+</script>
+
+<style scoped>
+/* Header styles */
+.header {
+  background-color: #000000;
+  padding: 0 16;
+  height: 50;
+}
+
+.store-box{
+border-radius: 18;
+background-color: #3a3a3a;
+width: 44;
+height: 44;
+vertical-align: center;
+margin-right: 10;
+margin-left: 0;
+
+}
+.user-avatar {
+  width: 30;
+  height: 30;
+  border-radius: 20;
+}
+
+.page-title {
+  color: #ffffff;
+  font-size: 35;
+  font-weight: bold;
+}
+
+.app-logo {
+  margin-top: 10;
+  width: 60;
+  height: 60;
+}
+
+/* Content area */
+.content-area {
+  background-color: #000000;
+}
+
+/* Welcome section */
+.welcome-section {
+  padding: 0 16 20 16;
+}
+
+.welcome-text {
+  color: #999999;
+  font-size: 16;
+  margin-bottom: 12;
+}
+
+.review-button {
+  background-color: transparent;
+  color: #ffcd50;
+  border-width: 1;
+  border-color: #ffcd50;
+  border-radius: 20;
+  height: 40;
+  text-transform: none;
+  font-size: 14;
+}
+
+/* Salon info */
+.salon-info {
+  background-color: #212121;
+  border-radius: 20;
+  padding: 5 10;
+  margin: 0 16 16 16;
+}
+
+.salon-icon {
+  width: 22;
+  height: 22;
+  margin-right: 10;
+  margin-left: 10;
+  vertical-align: middle;
+}
+
+.salon-name {
+  color: #ffffff;
+  font-size: 16;
+  vertical-align: middle;
+}
+
+/* Barbers list */
+.barbers-list {
+  padding: 0 16;
+}
+
+.barber-card {
   margin-bottom: 20;
-  border-radius: 10;
+  border-radius: 20;
   overflow: hidden;
 }
 
-.barbier-photo {
+.barber-image {
   width: 100%;
-  height: 180;
+  height: 220;
 }
 
-.barbier-info {
-  background-color: rgba(51, 51, 51, 0.7);
-  padding: 10;
+.barber-info-container {
+  background-color: rgba(60, 60, 60, 0.7);
+  padding: 10 16;
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
+  height: 60;
 }
 
-.barbier-name {
+.barber-info {
+  vertical-align: center;
+}
+
+.barber-name {
   color: #ffffff;
-  font-size: 18;
+  font-size: 20;
   font-weight: bold;
 }
 
-.barbier-title {
-  color: #999999;
+.barber-title {
+  color: #cccccc;
   font-size: 14;
 }
 
 .rating-container {
-  background-color: #333333;
+  background-color: rgba(40, 40, 40, 0.7);
   border-radius: 20;
-  padding: 5 10;
-  margin-right: 10;
+  padding: 6 12;
+  vertical-align: center;
 }
 
 .rating-value {
   color: #ffffff;
   font-size: 16;
   font-weight: bold;
+  vertical-align: middle;
 }
 
 .rating-star {
-  color: #FFCC33;
+  color: #ffcd50;
   font-size: 16;
+  vertical-align: middle;
+  margin-left: 2;
 }
-  
-  .error-message {
-    color: #ff4d4d;
-    text-align: center;
-    margin: 20;
-  }
-  
-  .nav-bar {
-    background-color: #000000;
-    border-top-width: 1;
-    border-top-color: #333333;
-    height: 60;
-  }
-  
-  .nav-item {
-    text-align: center;
-    padding: 10;
-  }
-  
-  .nav-icon {
-    width: 24;
-    height: 24;
-    margin-bottom: 3;
-  }
-  
-  .nav-text {
-    color: #999999;
-    font-size: 12;
-  }
-  
-  .active .nav-text {
-    color: #FFCC33;
-  }
-  
-  .active .nav-icon {
-    filter: sepia(100%) saturate(10000%) hue-rotate(20deg);
-  }
-  </style>
+
+.error-message {
+  color: #ff4d4d;
+  text-align: center;
+  margin: 20;
+  padding: 20;
+}
+
+/* Navigation bar */
+.nav-bar {
+  background-color: #000000;
+  height: 70;
+  border-top-width: 1;
+  border-top-color: #1a1a1a;
+}
+
+.nav-item {
+  text-align: center;
+  padding: 10 0;
+}
+
+.nav-icon {
+  width: 24;
+  height: 24;
+  margin-bottom: 5;
+}
+
+.nav-text {
+  color: #999999;
+  font-size: 12;
+}
+
+.active .nav-text {
+  color: #ffcd50;
+}
+
+.active .nav-icon {
+  filter: sepia(100%) saturate(10000%) hue-rotate(20deg);
+}
+</style>
