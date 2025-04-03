@@ -20,9 +20,9 @@
 
           <!-- Salon info -->
           <GridLayout columns="auto, *" class="salon-info">
-            <StackLayout  class="store-box">
-            <Image src="~/assets/images/shop-icon.png" class="salon-icon" col="0" />
-          </StackLayout>
+            <StackLayout class="store-box">
+              <Image src="~/assets/images/shop-icon.png" class="salon-icon" col="0" />
+            </StackLayout>
             <Label text="Le Pelo Cité Djamel, Oran" class="salon-name" col="1" />
           </GridLayout>
 
@@ -32,16 +32,18 @@
           <!-- Barbers list -->
           <StackLayout v-if="!loading" class="barbers-list">
             <StackLayout v-for="barbier in barbiers" :key="barbier.id" class="barber-card" @tap="voirDetailsBarbier(barbier)">
-              <Image :src="getBarbierImage(barbier)" class="barber-image" stretch="aspectFill" />
-              <GridLayout columns="*, auto" rows="auto" class="barber-info-container">
-                <StackLayout col="0" class="barber-info">
-                  <Label :text="barbier.nom" class="barber-name" />
-                  <Label text="Barber" class="barber-title" />
-                </StackLayout>
-                <StackLayout col="1" class="rating-container">
-                  <GridLayout columns="auto, auto" rows="auto">
-                    <Label :text="barbier.note.toFixed(1)" class="rating-value" col="0" />
-                    <Label text="★" class="rating-star" col="1" />
+              <GridLayout rows="*">
+                <Image :src="getBarbierImage(barbier)" class="barber-image" stretch="aspectFill" />
+                <StackLayout class="barber-info-overlay" horizontalAlignment="center" verticalAlignment="bottom" margin="0 0 20 0">
+                  <GridLayout columns="*, auto" rows="auto" class="barber-info-container">
+                    <StackLayout col="0" class="barber-info">
+                      <Label :text="barbier.nom" class="barber-name" />
+                      <Label text="Barber" class="barber-title" />
+                    </StackLayout>
+                    <GridLayout col="1" columns="auto, auto" class="rating-container">
+                      <Label :text="barbier.note.toFixed(1)" class="rating-value" col="0" />
+                      <Label text="★" class="rating-star" col="1" />
+                    </GridLayout>
                   </GridLayout>
                 </StackLayout>
               </GridLayout>
@@ -170,15 +172,15 @@ export default {
 }
 
 .store-box{
-border-radius: 18;
-background-color: #3a3a3a;
-width: 44;
-height: 44;
-vertical-align: center;
-margin-right: 10;
-margin-left: 0;
-
+  border-radius: 18;
+  background-color: #3a3a3a;
+  width: 44;
+  height: 44;
+  vertical-align: center;
+  margin-right: 10;
+  margin-left: 0;
 }
+
 .user-avatar {
   width: 30;
   height: 30;
@@ -187,7 +189,7 @@ margin-left: 0;
 
 .page-title {
   color: #ffffff;
-  font-size: 35;
+  font-size: 40;
   font-weight: bold;
 }
 
@@ -255,21 +257,25 @@ margin-left: 0;
   margin-bottom: 20;
   border-radius: 20;
   overflow: hidden;
+  height: 280;
 }
 
 .barber-image {
   width: 100%;
-  height: 220;
+  height: 100%;
+  border-radius: 20;
+}
+
+.barber-info-overlay {
+  width: 80%;
 }
 
 .barber-info-container {
   background-color: rgba(60, 60, 60, 0.7);
-  padding: 10 16;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60;
+  backdrop-filter: blur(10);
+  padding: 5 16;
+  border-radius: 20;
+  margin-bottom: 10;
 }
 
 .barber-info {
@@ -285,12 +291,10 @@ margin-left: 0;
 .barber-title {
   color: #cccccc;
   font-size: 14;
+  margin-top: 0;
 }
 
 .rating-container {
-  background-color: rgba(40, 40, 40, 0.7);
-  border-radius: 20;
-  padding: 6 12;
   vertical-align: center;
 }
 
@@ -302,7 +306,7 @@ margin-left: 0;
 }
 
 .rating-star {
-  color: #ffcd50;
+  color: #fff;
   font-size: 16;
   vertical-align: middle;
   margin-left: 2;
