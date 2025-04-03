@@ -327,78 +327,61 @@
   }
   
   .next-appointment {
-    background-color: #333333;
-    border-radius: 10;
-    padding: 10;
-    margin-bottom: 15;
-  }
-  
-  .calendar-icon {
-    width: 24;
-    height: 24;
-    color: #FFCC33;
-  }
-  
-  .next-text {
-    color: #ffffff;
-    font-size: 14;
-    margin-left: 5;
-  }
-  
-  .delete-btn {
-    color: #ff4d4d;
-    font-size: 20;
-    background-color: transparent;
-    width: 30;
-    height: 30;
-    padding: 0;
-  }
-  
-  .appointment-list {
-    margin-top: 10;
-  }
-  
-  .appointment-card {
-    background-color: #333333;
-    border-radius: 10;
-    padding: 15;
-    margin-bottom: 15;
-  }
-  
-  .appointment-header {
-    margin-bottom: 10;
-  }
-  
-  .appointment-date {
-    color: #ffffff;
-    font-size: 16;
-    font-weight: bold;
-  }
-  
-  .appointment-price {
-    color: #ffffff;
-    font-size: 16;
-    font-weight: bold;
-    text-align: right;
-  }
-  
-  .appointment-details {
-    margin-bottom: 15;
-  }
-  
-  .appointment-with,
-  .appointment-services {
-    color: #cccccc;
-    font-size: 14;
-  }
-  
-  .cancel-btn {
-    background-color: #ff4d4d;
-    color: #ffffff;
-    border-radius: 20;
-    height: 40;
-    font-size: 14;
-  }
+  background-color: #333333;
+  border-radius: 10;
+  padding: 10;
+  margin-bottom: 15;
+}
+
+.calendar-icon {
+  width: 24;
+  height: 24;
+  color: #FFCC33;
+}
+
+.next-text {
+  color: #ffffff;
+  font-size: 14;
+  margin-left: 5;
+}
+
+.delete-btn {
+  color: #ff4d4d;
+  font-size: 20;
+  background-color: transparent;
+  width: 30;
+  height: 30;
+  padding: 0;
+}
+
+.appointment-card {
+  background-color: #333333;
+  border-radius: 10;
+  padding: 15;
+  margin-bottom: 15;
+}
+
+.appointment-date {
+  color: #ffffff;
+  font-size: 16;
+  font-weight: bold;
+}
+
+.appointment-price {
+  color: #ffffff;
+  font-size: 16;
+  font-weight: bold;
+  text-align: right;
+}
+
+.cancel-btn {
+  background-color: #ff4d4d;
+  color: #ffffff;
+  border-radius: 20;
+  height: 40;
+  font-size: 14;
+  margin-top: 10;
+}
   
   .error-message {
     color: #ff4d4d;

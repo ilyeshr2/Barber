@@ -16,13 +16,13 @@
           <StackLayout class="details-container">
             <!-- Photo et rating -->
             <GridLayout rows="auto" columns="auto, *, auto" class="barbier-header">
-              <Image :src="getBarbierImage()" class="barbier-photo" col="1" stretch="aspectFill" />
-              <StackLayout class="rating-container" col="2">
-                <Label :text="barbier.note.toFixed(1)" class="rating-value" />
-                <Label text="★" class="rating-star" />
-                <Label :text="barbier.nombreAvis + ' Reviews'" class="reviews-count" />
-              </StackLayout>
-            </GridLayout>
+  <Image :src="getBarbierImage()" class="barbier-photo" col="1" stretch="aspectFill" />
+  <StackLayout class="rating-container" col="2">
+    <Label :text="barbier.note.toFixed(1)" class="rating-value" />
+    <Label text="★" class="rating-star" />
+    <Label :text="barbier.nombreAvis + ' Reviews'" class="reviews-count" />
+  </StackLayout>
+</GridLayout>
             
             <!-- Services offerts -->
             <Label text="Services Offered" class="section-title" />
@@ -86,42 +86,43 @@
       </GridLayout>
 
       <!-- Bottom sheet modal - updated implementation -->
-      <StackLayout v-if="showConfirmationModal" class="modal-overlay">
-        <StackLayout class="confirmation-sheet">
-          <!-- Indicator bar -->
-          <StackLayout class="indicator-bar"></StackLayout>
-          
-          <!-- Confirmation content -->
-          <Label text="Your Appointment" class="sheet-title" />
-          
-          <!-- Appointment details -->
-          <GridLayout rows="auto, auto, auto" columns="auto, *" class="details-grid">
-            <!-- Date -->
-            <Label text="Date:" class="details-label" row="0" col="0" />
-            <Label :text="formatConfirmationDate()" class="details-value" row="0" col="1" />
-            
-            <!-- With -->
-            <Label text="With:" class="details-label" row="1" col="0" />
-            <Label :text="barbier ? barbier.nom : ''" class="details-value" row="1" col="1" />
-            
-            <!-- Services -->
-            <Label text="Services:" class="details-label" row="2" col="0" />
-            <Label :text="selectedService ? selectedService.nom + '.' : ''" class="details-value" row="2" col="1" />
-          </GridLayout>
-          
-          <!-- Price -->
-          <Label :text="selectedService ? selectedService.prix + ' DA' : ''" class="price" />
-          
-          <!-- Confirm button -->
-          <Button text="I confirm" @tap="confirmerReservation" class="confirm-button" :isEnabled="!confirming" />
-          
-          <!-- Loading indicator -->
-          <ActivityIndicator v-if="confirming" busy="true" color="#FFCC33" class="loading-indicator" />
-          
-          <!-- Error message -->
-          <Label v-if="confirmationError" class="error-message" :text="confirmationError" textWrap="true" />
-        </StackLayout>
-      </StackLayout>
+<!-- Bottom sheet modal - updated implementation -->
+<StackLayout v-if="showConfirmationModal" class="modal-overlay">
+  <StackLayout class="confirmation-sheet">
+    <!-- Indicator bar -->
+    <StackLayout class="indicator-bar"></StackLayout>
+    
+    <!-- Confirmation content -->
+    <Label text="Your Appointment" class="sheet-title" />
+    
+    <!-- Appointment details -->
+    <GridLayout rows="auto, auto, auto" columns="auto, *" class="details-grid">
+      <!-- Date -->
+      <Label text="Date:" class="details-label" row="0" col="0" />
+      <Label :text="formatConfirmationDate()" class="details-value" row="0" col="1" />
+      
+      <!-- With -->
+      <Label text="With:" class="details-label" row="1" col="0" />
+      <Label :text="barbier ? barbier.nom : ''" class="details-value" row="1" col="1" />
+      
+      <!-- Services -->
+      <Label text="Services:" class="details-label" row="2" col="0" />
+      <Label :text="selectedService ? selectedService.nom : ''" class="details-value" row="2" col="1" />
+    </GridLayout>
+    
+    <!-- Price -->
+    <Label :text="selectedService ? selectedService.prix + ' DA' : ''" class="price" />
+    
+    <!-- Confirm button -->
+    <Button text="I confirm" @tap="confirmerReservation" class="confirm-button" :isEnabled="!confirming" />
+    
+    <!-- Loading indicator -->
+    <ActivityIndicator v-if="confirming" busy="true" color="#FFCC33" class="loading-indicator" />
+    
+    <!-- Error message -->
+    <Label v-if="confirmationError" class="error-message" :text="confirmationError" textWrap="true" />
+  </StackLayout>
+</StackLayout>
     </Page>
 </template>
   
@@ -315,7 +316,16 @@
       onNavigatedTo() {
         this.refreshUserInfo();
       }
-    }
+    },
+    openConfirmationModal() {
+  // Create appointment date/time
+  this.appointmentDate = new Date(this.selectedDate.date);
+  const [hours, minutes] = this.selectedHoraire.heure.split(':').map(Number);
+  this.appointmentDate.setHours(hours, minutes, 0, 0);
+  
+  // Show confirmation modal
+  this.showConfirmationModal = true;
+}
   };
   </script>
   
@@ -327,8 +337,13 @@
   }
 
   .modal-overlay {
-  vertical-align: bottom; /* This is key - align to bottom of screen */
-  /* No background color or width/height to avoid covering the entire screen */
+  background-color: rgba(0, 0, 0, 0.5);
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
 }
 
 .confirmation-sheet {
@@ -336,6 +351,8 @@
   border-top-left-radius: 20;
   border-top-right-radius: 20;
   padding-bottom: 20;
+  position: absolute;
+  bottom: 0;
   width: 100%;
 }
 
@@ -430,22 +447,25 @@
   }
   
   .barbier-header {
-    margin-bottom: 20;
-  }
-  
-  .barbier-photo {
-    width: 100;
-    height: 100;
-    border-radius: 50;
-  }
-  
-  .rating-container {
-    background-color: #333333;
-    border-radius: 5;
-    padding: 5;
-    margin-left: 10;
-    text-align: center;
-  }
+  margin-bottom: 20;
+  justify-content: center;
+}
+
+.barbier-photo {
+  width: 100;
+  height: 100;
+  border-radius: 50;
+  margin: 0 auto;
+}
+
+.rating-container {
+  background-color: #333333;
+  border-radius: 5;
+  padding: 5;
+  margin-left: 10;
+  text-align: center;
+  vertical-align: middle;
+}
   
   .rating-value {
     color: #ffffff;
@@ -476,18 +496,19 @@
   }
   
   .service-item {
-    background-color: #333333;
-    border-radius: 10;
-    padding: 15;
-    margin-bottom: 10;
-  }
-  
-  .service-check {
-    color: #ffffff;
-    font-size: 18;
-    width: 30;
-    text-align: center;
-  }
+  background-color: #333333;
+  border-radius: 10;
+  padding: 15;
+  margin-bottom: 10;
+}
+
+.service-check {
+  color: #FFCC33;
+  font-size: 18;
+  width: 30;
+  text-align: center;
+  font-weight: bold;
+}
   
   .service-name {
     color: #ffffff;
@@ -510,39 +531,39 @@
   }
   
   .date-item {
-    background-color: #333333;
-    border-radius: 10;
-    padding: 10;
-    margin-right: 10;
-    width: 70;
-    text-align: center;
-  }
-  
-  .date-selected {
-    background-color: #FFCC33;
-  }
-  
-  .date-day {
-    color: #ffffff;
-    font-size: 14;
-  }
-  
-  .date-number {
-    color: #ffffff;
-    font-size: 18;
-    font-weight: bold;
-  }
-  
-  .date-month {
-    color: #ffffff;
-    font-size: 14;
-  }
-  
-  .date-selected .date-day,
-  .date-selected .date-number,
-  .date-selected .date-month {
-    color: #000000;
-  }
+  background-color: #333333;
+  border-radius: 10;
+  padding: 10;
+  margin-right: 10;
+  width: 70;
+  text-align: center;
+}
+
+.date-selected {
+  background-color: #FFCC33;
+}
+
+.date-day {
+  color: #ffffff;
+  font-size: 14;
+}
+
+.date-number {
+  color: #ffffff;
+  font-size: 18;
+  font-weight: bold;
+}
+
+.date-month {
+  color: #ffffff;
+  font-size: 14;
+}
+
+.date-selected .date-day,
+.date-selected .date-number,
+.date-selected .date-month {
+  color: #000000;
+}
   
   .no-selection {
     background-color: #333333;
@@ -562,25 +583,26 @@
   }
   
   .schedule-item {
-    background-color: #333333;
-    border-radius: 10;
-    padding: 10;
-    margin: 5;
-    text-align: center;
-  }
-  
-  .schedule-selected {
-    background-color: #FFCC33;
-  }
-  
-  .schedule-time {
-    color: #ffffff;
-    font-size: 14;
-  }
-  
-  .schedule-selected .schedule-time {
-    color: #000000;
-  }
+  background-color: #333333;
+  border-radius: 10;
+  padding: 10;
+  margin: 5;
+  text-align: center;
+}
+
+.schedule-selected {
+  background-color: #FFCC33;
+}
+
+.schedule-time {
+  color: #ffffff;
+  font-size: 14;
+}
+
+.schedule-selected .schedule-time {
+  color: #000000;
+  font-weight: bold;
+}
   
   .voucher-container {
     background-color: #333333;

@@ -253,52 +253,54 @@
   }
   
   .form-container {
-    margin-top: 10;
-  }
-  
-  .input-container {
-    margin-bottom: 20;
-    background-color: #333333;
-    border-radius: 10;
-    padding: 15;
-  }
-  
-  .input-label {
-    color: #ffffff;
-    font-size: 16;
-    margin-bottom: 5;
-  }
-  
-  .text-field {
-    color: #ffffff;
-    font-size: 16;
-  }
-  
-  .date-picker {
-    color: #ffffff;
-    background-color: #444444;
-    border-radius: 5;
-  }
-  
-  .gender-options {
-    justify-content: space-between;
-    margin-top: 5;
-  }
-  
-  .gender-option {
-    background-color: #444444;
-    color: #ffffff;
-    padding: 10 15;
-    text-align: center;
-    border-radius: 5;
-    width: 30%;
-  }
-  
-  .gender-option.selected {
-    background-color: #FFCC33;
-    color: #000000;
-    font-weight: bold;
-  }
+  margin-top: 10;
+}
+
+.input-container {
+  margin-bottom: 15;
+  background-color: #333333;
+  border-radius: 10;
+  padding: 15;
+}
+
+.input-label {
+  color: #999999;
+  font-size: 14;
+  margin-bottom: 5;
+}
+
+.text-field {
+  color: #ffffff;
+  font-size: 16;
+  height: 40;
+}
+
+.date-picker {
+  color: #ffffff;
+  background-color: #444444;
+  border-radius: 5;
+  height: 40;
+}
+
+.gender-options {
+  justify-content: space-between;
+  margin-top: 5;
+}
+
+.gender-option {
+  background-color: #444444;
+  color: #ffffff;
+  padding: 10 15;
+  text-align: center;
+  border-radius: 5;
+  width: 30%;
+}
+
+.gender-option.selected {
+  background-color: #FFCC33;
+  color: #000000;
+  font-weight: bold;
+}
   
   .phone-input {
     align-items: center;

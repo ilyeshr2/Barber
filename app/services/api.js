@@ -96,7 +96,8 @@ export const authService = {
         saveUserInfo({
           id: data.id,
           nom: data.nom,
-          prenom: data.prenom
+          prenom: data.prenom,
+          telephone: userData.telephone // Save the telephone from signup data
         });
       }
       return data;
@@ -113,7 +114,8 @@ export const authService = {
         saveUserInfo({
           id: data.id,
           nom: data.nom,
-          prenom: data.prenom
+          prenom: data.prenom,
+          telephone: credentials.telephone // Save the telephone from login credentials
         });
       }
       return data;
@@ -121,7 +123,21 @@ export const authService = {
   },
   
   getProfile: () => {
-    return fetchApi("auth/profile");
+    return fetchApi("auth/profile").then(data => {
+      // Update the stored user data with the full profile
+      if (data) {
+        const currentUser = getUserInfo() || {};
+        const updatedUser = { 
+          ...currentUser,
+          ...data,
+          // Make sure telephone is preserved if it's not in the profile
+          telephone: data.telephone || currentUser.telephone 
+        };
+        saveUserInfo(updatedUser);
+        return updatedUser;
+      }
+      return data;
+    });
   },
   
   updateUserInfo: (updates) => {
@@ -143,7 +159,8 @@ export const authService = {
       // Update the stored user info with the response
       const userInfoToUpdate = {
         nom: data.nom,
-        prenom: data.prenom
+        prenom: data.prenom,
+        telephone: data.telephone || userData.telephone // Preserve telephone
       };
       authService.updateUserInfo(userInfoToUpdate);
       return data;
@@ -152,7 +169,8 @@ export const authService = {
       // Still update local data
       authService.updateUserInfo({
         nom: userData.nom,
-        prenom: userData.prenom
+        prenom: userData.prenom,
+        telephone: userData.telephone // Preserve telephone
       });
       throw error;
     });

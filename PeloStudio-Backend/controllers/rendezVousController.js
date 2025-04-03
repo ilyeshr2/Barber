@@ -5,7 +5,11 @@ const { RendezVous, Barbier, Service, Utilisateur } = require('../models');
 exports.getUserAppointments = async (req, res) => {
   try {
     const appointments = await RendezVous.findAll({
-      where: { UtilisateurId: req.userId },
+      where: { 
+        UtilisateurId: req.userId,
+        // Ajoutez cette ligne pour ne récupérer que les rendez-vous confirmés
+        statut: 'confirmé'
+      },
       include: [
         { model: Barbier, attributes: ['id', 'nom', 'photoUrl'] },
         { model: Service, attributes: ['id', 'nom', 'prix'] }

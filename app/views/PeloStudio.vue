@@ -13,9 +13,9 @@
         <GridLayout row="1" rows="auto, *">
           <!-- Message de bienvenue -->
           <StackLayout row="0" class="welcome-container">
-            <Label :text="'Bonjour, ' + userName" class="welcome-text" />
-            <Button text="Laissez-nous un commentaire" class="review-button" />
-          </StackLayout>
+  <Label :text="'Bonjour, ' + userName" class="welcome-text" />
+  <Button text="Laissez-nous un commentaire" class="review-button" />
+</StackLayout>
           
           <!-- Publications -->
           <ScrollView row="1">
@@ -176,7 +176,7 @@ export default {
 
 .welcome-container {
   background-color: #000000;
-  padding: 10;
+  padding: 10 15;
 }
 
 .welcome-text {
@@ -186,13 +186,14 @@ export default {
 }
 
 .review-button {
-  background-color: #333333;
+  background-color: transparent;
   color: #FFCC33;
   border-width: 1;
   border-color: #FFCC33;
   border-radius: 20;
   height: 40;
-  margin-bottom: 15;
+  text-transform: none;
+  font-size: 14;
 }
 
 .feed-container {
@@ -274,7 +275,7 @@ export default {
 
 .nav-item {
   text-align: center;
-  padding: 10;
+  padding: 5 0;
 }
 
 .nav-icon {
@@ -290,9 +291,10 @@ export default {
 
 .active .nav-text {
   color: #FFCC33;
+  font-weight: bold;
 }
 
 .active .nav-icon {
-  filter: sepia(100%) saturate(10000%) hue-rotate(20deg);
+  filter: sepia(100%) saturate(300%) brightness(100%) hue-rotate(20deg);
 }
 </style>

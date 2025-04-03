@@ -12,7 +12,7 @@ exports.signup = async (req, res) => {
     const existingUser = await Utilisateur.findOne({ where: { telephone } });
     if (existingUser) {
       return res.status(400).json({ message: 'Ce numéro de téléphone est déjà utilisé' });
-    }cl
+    }
     
     // Hasher le mot de passe
     const salt = await bcrypt.genSalt(10);

@@ -227,51 +227,53 @@
   }
   
   .barbier-card {
-    margin-bottom: 20;
-  }
-  
-  .barbier-photo {
-    width: 100%;
-    height: 180;
-    border-top-left-radius: 10;
-    border-top-right-radius: 10;
-  }
-  
-  .barbier-info {
-    background-color: #333333;
-    border-bottom-left-radius: 10;
-    border-bottom-right-radius: 10;
-    padding: 10;
-  }
-  
-  .barbier-name {
-    color: #ffffff;
-    font-size: 18;
-    font-weight: bold;
-  }
-  
-  .barbier-title {
-    color: #999999;
-    font-size: 14;
-  }
-  
-  .rating-container {
-    background-color: #333333;
-    border-radius: 20;
-    padding: 5 10;
-    margin-right: 10;
-  }
-  
-  .rating-value {
-    color: #ffffff;
-    font-size: 16;
-    font-weight: bold;
-  }
-  
-  .rating-star {
-    color: #FFCC33;
-    font-size: 16;
-  }
+  margin-bottom: 20;
+  border-radius: 10;
+  overflow: hidden;
+}
+
+.barbier-photo {
+  width: 100%;
+  height: 180;
+}
+
+.barbier-info {
+  background-color: rgba(51, 51, 51, 0.7);
+  padding: 10;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.barbier-name {
+  color: #ffffff;
+  font-size: 18;
+  font-weight: bold;
+}
+
+.barbier-title {
+  color: #999999;
+  font-size: 14;
+}
+
+.rating-container {
+  background-color: #333333;
+  border-radius: 20;
+  padding: 5 10;
+  margin-right: 10;
+}
+
+.rating-value {
+  color: #ffffff;
+  font-size: 16;
+  font-weight: bold;
+}
+
+.rating-star {
+  color: #FFCC33;
+  font-size: 16;
+}
   
   .error-message {
     color: #ff4d4d;

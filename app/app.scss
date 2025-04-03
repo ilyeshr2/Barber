@@ -19,3 +19,30 @@
   font-family: 'Font Awesome 5 Free', 'fa-regular-400';
   font-weight: 400;
 }
+
+/* Primary buttons (yellow) */
+.primary-button, .book-button, .confirm-button, .btn-inscription, .login-button, .save-button {
+  background-color: #FFCC33;
+  color: #000000;
+  font-size: 18;
+  font-weight: bold;
+  border-radius: 25;
+  height: 50;
+  margin-top: 10;
+}
+
+/* Secondary buttons (outlined) */
+.review-button {
+  background-color: transparent;
+  color: #FFCC33;
+  border-width: 1;
+  border-color: #FFCC33;
+  border-radius: 20;
+  height: 40;
+}
+
+/* Danger buttons (red) */
+.cancel-btn, .logout-button, .delete-account {
+  background-color: #ff4d4d;
+  color: #ffffff;
+}
