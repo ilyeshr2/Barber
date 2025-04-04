@@ -13,9 +13,9 @@
         <StackLayout>
           <!-- Welcome section -->
           <StackLayout class="welcome-section">
-            <Label text="Barbers" class="page-title" col="1" />
-            <Label :text="'Hello, ' + userName" class="welcome-text" />
-            <Button text="Leave us a review" class="review-button" />
+            <Label text="Barbiers" class="page-title" col="1" />
+            <Label :text="'Bonjour, ' + userName" class="welcome-text" />
+            <Button text="Donnez-nous votre avis" class="review-button" />
           </StackLayout>
 
           <!-- Salon info -->
@@ -29,8 +29,11 @@
           <!-- Loading indicator -->
           <ActivityIndicator v-if="loading" busy="true" color="#FFCC33" />
 
+          <!-- Error message -->
+          <Label v-if="error" class="error-message" :text="error" textWrap="true" />
+
           <!-- Barbers list -->
-          <StackLayout v-if="!loading" class="barbers-list">
+          <StackLayout v-if="!loading && !error" class="barbers-list">
             <StackLayout v-for="barbier in barbiers" :key="barbier.id" class="barber-card" @tap="voirDetailsBarbier(barbier)">
               <GridLayout rows="*">
                 <Image :src="getBarbierImage(barbier)" class="barber-image" stretch="aspectFill" />
@@ -38,7 +41,7 @@
                   <GridLayout columns="*, auto" rows="auto" class="barber-info-container">
                     <StackLayout col="0" class="barber-info">
                       <Label :text="barbier.nom" class="barber-name" />
-                      <Label text="Barber" class="barber-title" />
+                      <Label text="Barbier" class="barber-title" />
                     </StackLayout>
                     <GridLayout col="1" columns="auto, auto" class="rating-container">
                       <Label :text="barbier.note.toFixed(1)" class="rating-value" col="0" />
@@ -49,9 +52,6 @@
               </GridLayout>
             </StackLayout>
           </StackLayout>
-
-          <!-- Error message -->
-          <Label v-if="error" class="error-message" :text="error" textWrap="true" />
         </StackLayout>
       </ScrollView>
 
@@ -63,15 +63,15 @@
         </StackLayout>
         <StackLayout col="1" class="nav-item active" @tap="allerVersPage('Barbiers')">
           <Image src="~/assets/images/barber-icon.png" class="nav-icon" />
-          <Label text="Barbers" class="nav-text" />
+          <Label text="Barbiers" class="nav-text" />
         </StackLayout>
         <StackLayout col="2" class="nav-item" @tap="allerVersPage('Rendez-vous')">
           <Image src="~/assets/images/calendar-icon.png" class="nav-icon" />
-          <Label text="Appointments" class="nav-text" />
+          <Label text="Rendez-vous" class="nav-text" />
         </StackLayout>
         <StackLayout col="3" class="nav-item" @tap="allerVersPage('Parametres')">
           <Image src="~/assets/images/settings-icon.png" class="nav-icon" />
-          <Label text="Settings" class="nav-text" />
+          <Label text="Paramètres" class="nav-text" />
         </StackLayout>
       </GridLayout>
     </GridLayout>
@@ -306,7 +306,7 @@ export default {
 }
 
 .rating-star {
-  color: #fff;
+  color: #ffcd50;
   font-size: 16;
   vertical-align: middle;
   margin-left: 2;
@@ -317,6 +317,7 @@ export default {
   text-align: center;
   margin: 20;
   padding: 20;
+  font-size: 16;
 }
 
 /* Navigation bar */
@@ -349,5 +350,9 @@ export default {
 
 .active .nav-icon {
   filter: sepia(100%) saturate(10000%) hue-rotate(20deg);
+}
+
+.loading-indicator {
+  margin: 50;
 }
 </style>

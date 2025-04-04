@@ -10,10 +10,10 @@
 
       <!-- Title container (moved after header) -->
       <StackLayout row="1" class="title-container">
-        <Label text="Appointments" class="app-title" />
-        <Label :text="'Hello, ' + userName" class="welcome-text" />
+        <Label text="Rendez-vous" class="app-title" />
+        <Label :text="'Bonjour, ' + userName" class="welcome-text" />
         <!-- Bouton review -->
-        <Button text="Leave us a review" class="review-button" />
+        <Button text="Donnez-nous votre avis" class="review-button" />
       </StackLayout>
 
       <!-- Contenu principal -->
@@ -28,6 +28,9 @@
           <!-- Loading indicator -->
           <ActivityIndicator v-else-if="loading" busy="true" color="#FFCC33" />
 
+          <!-- Error message -->
+          <Label v-else-if="error" class="error-message" :text="error" textWrap="true" />
+
           <!-- Liste des rendez-vous -->
           <StackLayout v-else>
             <!-- Message si aucun rendez-vous -->
@@ -41,7 +44,7 @@
               <GridLayout columns="auto, *, auto" class="next-appointment">
                 <Image src="~/assets/images/calendar-icon-alt.png" class="calendar-icon" col="0" />
                 <StackLayout col="1">
-                  <Label text="Next appointment" class="next-title" />
+                  <Label text="Prochain rendez-vous" class="next-title" />
                   <Label :text="formatNextAppointment()" class="next-details" />
                 </StackLayout>
                 <Button text="✕" class="delete-btn" col="2" @tap="annulerProchainRendezVous()" />
@@ -52,28 +55,25 @@
                 <StackLayout v-for="rdv in rendezVous" :key="rdv.id" class="appointment-card">
                   <GridLayout rows="auto, auto, auto, auto">
                     <GridLayout row="0" columns="auto, *">
-                      <Label text="Date:" class="appointment-label" col="0" />
+                      <Label text="Date: " class="appointment-label" col="0" />
                       <Label :text="formatAppointmentDate(rdv.date)" class="appointment-value" col="1" />
                     </GridLayout>
                     <GridLayout row="1" columns="auto, *">
-                      <Label text="With:" class="appointment-label" col="0" />
+                      <Label text="Avec: " class="appointment-label" col="0" />
                       <Label :text="getBarberName(rdv)" class="appointment-value" col="1" />
                     </GridLayout>
                     <GridLayout row="2" columns="auto, *">
-                      <Label text="Services:" class="appointment-label" col="0" />
+                      <Label text="Services: " class="appointment-label" col="0" />
                       <Label :text="getServiceName(rdv)" class="appointment-value" col="1" />
                     </GridLayout>
                     <GridLayout row="3" columns="*, auto">
-                      <Button text="Cancel appointment" @tap="annulerRendezVous(rdv.id)" class="cancel-btn" col="0" />
+                      <Button text="Annuler le rendez-vous" @tap="annulerRendezVous(rdv.id)" class="cancel-btn" col="0" />
                       <Label :text="getServicePrice(rdv) + ' DA'" class="price-label" col="1" />
                     </GridLayout>
                   </GridLayout>
                 </StackLayout>
               </StackLayout>
             </StackLayout>
-
-            <!-- Message d'erreur -->
-            <Label v-if="error" class="error-message" :text="error" textWrap="true" />
           </StackLayout>
         </StackLayout>
       </ScrollView>
@@ -86,15 +86,15 @@
         </StackLayout>
         <StackLayout col="1" class="nav-item" @tap="allerVersPage('Barbiers')">
           <Image src="~/assets/images/barber-icon.png" class="nav-icon" />
-          <Label text="Barbers" class="nav-text" />
+          <Label text="Barbiers" class="nav-text" />
         </StackLayout>
         <StackLayout col="2" class="nav-item active" @tap="allerVersPage('Rendez-vous')">
           <Image src="~/assets/images/calendar-icon.png" class="nav-icon" />
-          <Label text="Appointments" class="nav-text" />
+          <Label text="Rendez-vous" class="nav-text" />
         </StackLayout>
         <StackLayout col="3" class="nav-item" @tap="allerVersPage('Parametres')">
           <Image src="~/assets/images/settings-icon.png" class="nav-icon" />
-          <Label text="Settings" class="nav-text" />
+          <Label text="Paramètres" class="nav-text" />
         </StackLayout>
       </GridLayout>
     </GridLayout>
@@ -103,7 +103,7 @@
 
 <script>
 import { rendezVousService, authService } from '../services/api';
-import { formatDisplayDate, formatDisplayTime } from '../utils/helpers';
+import { formatAppointmentDate, formatDisplayTime } from '../utils/helpers';
 import { confirm } from '@nativescript/core/ui/dialogs';
 
 export default {
@@ -162,7 +162,7 @@ export default {
         this.rendezVous.sort((a, b) => new Date(a.date) - new Date(b.date));
       } catch (error) {
         console.error('Error loading appointments:', error);
-        this.error = 'Erreur lors du chargement des rendez-vous';
+        this.error = 'Error loading appointments';
       } finally {
         this.loading = false;
       }
@@ -171,28 +171,30 @@ export default {
     formatNextAppointment() {
       if (this.rendezVous.length === 0) return '';
       const rdv = this.rendezVous[0];
-      return `3 Apr - 14:00 with ${this.getBarberName(rdv)}`;
+      const date = new Date(rdv.date);
+      const formattedDate = `${date.getDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getMonth()]}`;
+      return `${formattedDate} - ${formatDisplayTime(date)} with ${this.getBarberName(rdv)}`;
     },
 
-    formatAppointmentDate(date) {
-      return `Thu 3 Apr 2025 - 14:00`;
+    formatAppointmentDate(dateString) {
+      return formatAppointmentDate(dateString);
     },
 
     getBarberName(rdv) {
-      return rdv.Barbier ? rdv.Barbier.nom : 'Islem';
+      return rdv.Barbier ? rdv.Barbier.nom : 'Unknown Barber';
     },
 
     getServiceName(rdv) {
-      return rdv.Service ? rdv.Service.nom : 'Haircut.';
+      return rdv.Service ? rdv.Service.nom : 'Unknown Service';
     },
 
     getServicePrice(rdv) {
-      return rdv.Service ? rdv.Service.prix : 500;
+      return rdv.Service ? rdv.Service.prix : 0;
     },
 
     allerVersPage(page) {
       if (page === 'Rendez-vous') {
-        return; // Déjà sur cette page
+        return; // Already on this page
       }
       this.$navigateTo(require(`./${page}`).default);
     },
@@ -212,10 +214,10 @@ export default {
 
     async annulerRendezVous(id) {
       const result = await confirm({
-        title: "Annuler le rendez-vous",
-        message: "Êtes-vous sûr de vouloir annuler ce rendez-vous?",
-        okButtonText: "Oui",
-        cancelButtonText: "Non"
+        title: "Cancel Appointment",
+        message: "Are you sure you want to cancel this appointment?",
+        okButtonText: "Yes",
+        cancelButtonText: "No"
       });
 
       if (result) {
@@ -226,7 +228,7 @@ export default {
           this.loadAppointments();
         } catch (error) {
           console.error('Error cancelling appointment:', error);
-          this.error = 'Erreur lors de l\'annulation du rendez-vous';
+          this.error = 'Error cancelling appointment';
         }
       }
     },
@@ -257,8 +259,6 @@ export default {
   width: 50;
   height: 50;
   border-radius: 25;
-  border-width: 1;
-  border-color: #ffffff;
 }
 
 .app-icon {
@@ -286,13 +286,14 @@ export default {
 
 .review-button {
   background-color: transparent;
-  color: #FFCC33;
+  color: #ffcd50;
   border-width: 1;
-  border-color: #333333;
+  border-color: #ffcd50;
   border-radius: 20;
-  height: 50;
-  font-size: 16;
-  margin: 15 0;
+  height: 40;
+  text-transform: none;
+  font-size: 14;
+  margin-top: 20;
 }
 
 .appointments-container {
@@ -345,15 +346,15 @@ export default {
 }
 
 .next-appointment {
-  background-color: #222222;
+  background-color: #212121;
   border-radius: 15;
-  padding: 15;
+  padding: 10;
   margin-bottom: 15;
 }
 
 .calendar-icon {
-  width: 35;
-  height: 35;
+  width: 24;
+  height: 24;
   margin-right: 10;
   color: #FFCC33;
 }
@@ -382,7 +383,7 @@ export default {
 }
 
 .appointment-card {
-  background-color: #222222;
+  background-color: #212121;
   border-radius: 15;
   padding: 15;
   margin-bottom: 15;
@@ -410,7 +411,7 @@ export default {
 }
 
 .cancel-btn {
-  background-color: transparent;
+  background-color: rgba(255, 77, 77, 0.2);
   color: #ff4d4d;
   border-color: #ff4d4d;
   border-width: 1;
@@ -425,6 +426,7 @@ export default {
   color: #ff4d4d;
   text-align: center;
   margin: 20;
+  font-size: 16;
 }
 
 .nav-bar {
@@ -458,5 +460,9 @@ export default {
 
 .active .nav-icon {
   filter: sepia(100%) saturate(10000%) hue-rotate(20deg);
+}
+
+.loading-indicator {
+  margin: 50;
 }
 </style>

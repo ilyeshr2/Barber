@@ -19,7 +19,7 @@
 <!-- Phone field only - focused approach -->
 <GridLayout class="phone-container" rows="auto, auto" columns="*">
   <!-- "Phone:" label above the input -->
-  <Label text="Phone:" class="phone-label" row="0" col="0" />
+  <Label text="Téléphone:" class="phone-label" row="0" col="0" />
   
   <!-- Country code and text field in the second row -->
   <GridLayout rows="auto" columns="auto, *" class="phone-input-row" row="1" col="0">
@@ -118,50 +118,49 @@ methods: {
 
 <style scoped>
 .connexion-container {
-background-color: #000000;
-padding: 30;
+  background-color: #000000;
+  padding: 30;
 }
-
-
 
 .logo {
-width: 180;
-height: 180;
-margin-top: 20;
-margin-bottom: 30;
-horizontal-align: center;
+  width: 180;
+  height: 180;
+  margin-top: 20;
+  margin-bottom: 30;
+  horizontal-align: center;
 }
 
-.text-bien{
+.text-bien {
   text-align: center;
 }
+
 .partie1 {
   margin-top: 70;
 }
-
 
 .partie2 {
   margin-top: 70;
 }
 
 .welcome-heading {
-color: #ffffff;
-font-size: 32;
-font-weight: bold;
-margin-bottom: 0;
+  color: #ffffff;
+  font-size: 32;
+  font-weight: bold;
+  margin-bottom: 0;
 }
 
 .welcome-text {
-color: #ffffff;
-font-size: 19;
-margin-bottom: 15;
-text-wrap: true;
+  color: #ffffff;
+  font-size: 19;
+  margin-bottom: 15;
+  text-wrap: true;
 }
 
 .error-message {
-color: #ff4d4d;
-text-align: center;
-margin-bottom: 15;
+  color: #ff4d4d;
+  text-align: center;
+  margin-bottom: 15;
+  font-size: 16;
 }
 
 /* Phone field */
@@ -172,8 +171,9 @@ margin-bottom: 15;
   margin-bottom: 15;
 }
 
-TextField{
-    placeholder-color: #5f5f5f;
+TextField {
+  placeholder-color: #5f5f5f;
+  color: #ffffff;
 }
 
 .phone-label {
@@ -216,54 +216,54 @@ TextField{
   padding: 0;
   vertical-align: middle;
 }
+
 /* Password field */
 .password-field {
-height: 50;
-width: 600;
-background-color: #222222;
-border-radius: 20;
-border-width: 0;
-padding: 0 15;
-margin-bottom: 30;
-color: #ffffff;
-font-size: 16;
+  height: 50;
+  width: 600;
+  background-color: #222222;
+  border-radius: 20;
+  border-width: 0;
+  padding: 0 15;
+  margin-bottom: 30;
+  color: #ffffff;
+  font-size: 16;
 }
 
 /* Skip login */
 .skip-login {
-color: #fecc4f;
-text-align: center;
-font-size: 16;
-margin-bottom: 5;
+  color: #fecc4f;
+  text-align: center;
+  font-size: 16;
+  margin-bottom: 5;
 }
 
 /* Login button */
 .login-button {
-background-color: #fecc4f;
-color: #000000;
-font-size: 18;
-font-weight: bold;
-height: 50;
-border-radius: 17;
-margin-bottom: 20;
+  background-color: #fecc4f;
+  color: #000000;
+  font-size: 18;
+  font-weight: bold;
+  height: 50;
+  border-radius: 17;
+  margin-bottom: 20;
 }
 
 .loading-indicator {
-margin-bottom: 15;
+  margin-bottom: 15;
 }
 
 /* Registration */
 .register-question {
-color: #ffffff;
-font-size: 19;
-text-align: center;
-margin-bottom: 5;
+  color: #ffffff;
+  font-size: 19;
+  text-align: center;
+  margin-bottom: 5;
 }
 
 .register-link {
-color: #fecc4f;
-font-size: 19;
-text-align: center;
+  color: #fecc4f;
+  font-size: 19;
+  text-align: center;
 }
-
 </style>

@@ -5,7 +5,7 @@
       <!-- Header in the first row -->
       <GridLayout row="0" columns="auto, *" class="header">
         <Button text="<" @tap="retour" class="btn-retour" col="0" />
-        <Label text="Sign Up" class="page-title" col="1" />
+        <Label text="Inscription" class="page-title" col="1" />
       </GridLayout>
       
       <!-- Content in the second row -->
@@ -21,7 +21,7 @@
           <StackLayout class="form-container">
             <!-- Nom et prénom sur la même ligne -->
             <GridLayout class="input-container" rows="auto, auto" columns="*">
-              <Label text="First and Last Name:" class="input-label" row="0" col="0" />
+              <Label text="Prénom et Nom:" class="input-label" row="0" col="0" />
               <GridLayout columns="*, *" rows="auto" class="name-fields margin-top" row="1" col="0">
                 <TextField v-model="prenom" hint="_____________" class="text-field" col="0" />
                 <TextField v-model="nom" hint="_____________" class="text-field margin-left" col="1" />
@@ -30,7 +30,7 @@
             
             <!-- Date de naissance -->
             <GridLayout class="input-container date-container" rows="auto, auto" columns="*, auto">
-              <Label text="Date of Birth:" class="input-label" row="0" col="0" verticalAlignment="center" />
+              <Label text="Date de naissance:" class="input-label" row="0" col="0" verticalAlignment="center" />
               <Label :text="formattedDate" @tap="showDatePicker" class="date-display" row="0" col="1" horizontalAlignment="right" />
               <Button text="OK" @tap="hideDatePicker" class="ok-button" row="0" col="2" horizontalAlignment="right" :visibility="isDatePickerVisible ? 'visible' : 'collapsed'" />
               <DatePicker ref="datePicker" v-model="dateNaissance" row="1" colSpan="3" :visibility="isDatePickerVisible ? 'visible' : 'collapsed'" @dateChange="onDateChange" class="date-picker" />
@@ -38,7 +38,7 @@
             
             <!-- Genre -->
             <GridLayout class="input-container gender-container" rows="auto" columns="*, *">
-              <Label text="Gender:" class="input-label" row="0" col="0" verticalAlignment="center" />
+              <Label text="Genre:" class="input-label" row="0" col="0" verticalAlignment="center" />
               <StackLayout @tap="showGenderPicker" class="gender-display-container" row="0" col="1" horizontalAlignment="right">
                 <GridLayout columns="auto, auto" verticalAlignment="center">
                   <Label :text="genreDisplay[genre]" class="gender-display-text" col="0" />
@@ -49,7 +49,7 @@
             
             <!-- Téléphone -->
             <GridLayout class="phone-container" rows="auto, auto" columns="*">
-              <Label text="Phone:" class="phone-label" row="0" col="0" />
+              <Label text="Téléphone:" class="phone-label" row="0" col="0" />
               
               <GridLayout rows="auto" columns="auto, *" class="phone-input-row" row="1" col="0">
                 <StackLayout row="0" col="0" class="country-code-box">
@@ -66,20 +66,20 @@
             
             <!-- Email (facultatif) -->
             <GridLayout class="input-container" rows="auto, auto" columns="*">
-              <Label text="Email: (optional)" class="input-label" row="0" col="0" />
-              <TextField v-model="email" hint="Your email" keyboardType="email" class="text-field margin-top" row="1" col="0" />
+              <Label text="Email: (optionnel)" class="input-label" row="0" col="0" />
+              <TextField v-model="email" hint="Votre email" keyboardType="email" class="text-field margin-top" row="1" col="0" />
             </GridLayout>
             
             <!-- Mot de passe -->
             <GridLayout class="input-container" rows="auto, auto" columns="*">
-              <Label text="Password:" class="input-label" row="0" col="0" />
-              <TextField v-model="motDePasse" secure="true" hint="Your password" class="text-field margin-top" row="1" col="0" />
+              <Label text="Mot de passe:" class="input-label" row="0" col="0" />
+              <TextField v-model="motDePasse" secure="true" hint="Votre mot de passe" class="text-field margin-top" row="1" col="0" />
             </GridLayout>
             
             <!-- Confirmation mot de passe -->
             <GridLayout class="input-container" rows="auto, auto" columns="*">
-              <Label text="Confirm Password:" class="input-label" row="0" col="0" />
-              <TextField v-model="confirmMotDePasse" secure="true" hint="Confirm your password" class="text-field margin-top" row="1" col="0" />
+              <Label text="Confirmer mot de passe:" class="input-label" row="0" col="0" />
+              <TextField v-model="confirmMotDePasse" secure="true" hint="Confirmer votre mot de passe" class="text-field margin-top" row="1" col="0" />
             </GridLayout>
             
             <!-- Added spacing to ensure content scrolls above the footer -->
@@ -92,7 +92,7 @@
       <GridLayout row="2" rows="auto, auto" class="sticky-footer">
         <StackLayout row="0" class="gradient-transition"></StackLayout>
         <StackLayout row="1" class="footer-content">
-          <Button text="Sign Up" @tap="inscription" class="btn-inscription" :isEnabled="!isLoading" />
+          <Button text="S'inscrire" @tap="inscription" class="btn-inscription" :isEnabled="!isLoading" />
           <ActivityIndicator v-if="isLoading" busy="true" color="#ffcd50" />
         </StackLayout>
       </GridLayout>
@@ -247,13 +247,15 @@ export default {
   margin-right: 130;
 }
 
-.margin-top{
+.margin-top {
   margin-top: -10;
   margin-left: -0;
 }
-.margin-left{
+
+.margin-left {
   margin-left: -130;
 }
+
 .inscription-container {
   background-color: #000000;
   padding: 20;
@@ -294,6 +296,7 @@ export default {
   color: #ff4d4d;
   text-align: center;
   margin-bottom: 15;
+  font-size: 16;
 }
 
 .form-container {
@@ -325,7 +328,6 @@ export default {
   width: 45%;
 }
 
-
 .gender-container {
   padding: 12 22;
   margin-bottom: 15;
@@ -340,6 +342,7 @@ export default {
   text-align: center;
   width: 120;
 }
+
 .gender-button {
   text-align: left;
   color: #ffcd50;
@@ -441,5 +444,10 @@ export default {
   font-weight: bold;
   border-radius: 20;
   height: 50;
+}
+
+.loading-indicator {
+  margin-top: 15;
+  margin-bottom: 15;
 }
 </style>

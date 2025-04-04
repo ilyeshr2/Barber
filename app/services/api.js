@@ -86,11 +86,13 @@ const fetchApi = async (endpoint, options = {}) => {
 
 // Auth service
 export const authService = {
-  signup: (userData) => {
-    return fetchApi("auth/signup", {
-      method: "POST",
-      body: userData
-    }).then(data => {
+  signup: async (userData) => {
+    try {
+      const data = await fetchApi("auth/signup", {
+        method: "POST",
+        body: userData
+      });
+      
       if (data.token) {
         saveToken(data.token);
         saveUserInfo({
@@ -101,14 +103,19 @@ export const authService = {
         });
       }
       return data;
-    });
+    } catch (error) {
+      console.error('Signup error:', error);
+      throw new Error(error.message || 'Error during registration');
+    }
   },
   
-  login: (credentials) => {
-    return fetchApi("auth/login", {
-      method: "POST",
-      body: credentials
-    }).then(data => {
+  login: async (credentials) => {
+    try {
+      const data = await fetchApi("auth/login", {
+        method: "POST",
+        body: credentials
+      });
+      
       if (data.token) {
         saveToken(data.token);
         saveUserInfo({
@@ -119,11 +126,16 @@ export const authService = {
         });
       }
       return data;
-    });
+    } catch (error) {
+      console.error('Login error:', error);
+      throw new Error(error.message || 'Error during login');
+    }
   },
   
-  getProfile: () => {
-    return fetchApi("auth/profile").then(data => {
+  getProfile: async () => {
+    try {
+      const data = await fetchApi("auth/profile");
+      
       // Update the stored user data with the full profile
       if (data) {
         const currentUser = getUserInfo() || {};
@@ -137,7 +149,10 @@ export const authService = {
         return updatedUser;
       }
       return data;
-    });
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      throw new Error('Failed to load profile. Please try again later.');
+    }
   },
   
   updateUserInfo: (updates) => {
@@ -151,11 +166,13 @@ export const authService = {
     return null;
   },
   
-  updateProfile: (userData) => {
-    return fetchApi("auth/profile", {
-      method: "PUT",
-      body: userData
-    }).then(data => {
+  updateProfile: async (userData) => {
+    try {
+      const data = await fetchApi("auth/profile", {
+        method: "PUT",
+        body: userData
+      });
+      
       // Update the stored user info with the response
       const userInfoToUpdate = {
         nom: data.nom,
@@ -164,16 +181,16 @@ export const authService = {
       };
       authService.updateUserInfo(userInfoToUpdate);
       return data;
-    }).catch(error => {
-      console.log('API update failed:', error);
+    } catch (error) {
+      console.error('API update failed:', error);
       // Still update local data
       authService.updateUserInfo({
         nom: userData.nom,
         prenom: userData.prenom,
         telephone: userData.telephone // Preserve telephone
       });
-      throw error;
-    });
+      throw new Error('Profile updated locally, but server update failed. Changes may not persist after logout.');
+    }
   },
   
   logout: () => {
@@ -192,41 +209,103 @@ export const authService = {
 
 // Barber service
 export const barbierService = {
-  getAllBarbers: () => {
-    return fetchApi("barbers");
+  getAllBarbers: async () => {
+    try {
+      return await fetchApi("barbers");
+    } catch (error) {
+      console.error('Error fetching barbers:', error);
+      throw new Error('Failed to load barbers. Please try again later.');
+    }
   },
   
-  getBarberById: (id) => {
-    return fetchApi(`barbers/${id}`);
+  getBarberById: async (id) => {
+    try {
+      return await fetchApi(`barbers/${id}`);
+    } catch (error) {
+      console.error(`Error fetching barber ${id}:`, error);
+      throw new Error('Failed to load barber details. Please try again later.');
+    }
   },
   
-  getBarberServices: (id) => {
-    return fetchApi(`barbers/${id}/services`);
+  getBarberServices: async (id) => {
+    try {
+      return await fetchApi(`barbers/${id}/services`);
+    } catch (error) {
+      console.error(`Error fetching services for barber ${id}:`, error);
+      throw new Error('Failed to load barber services. Please try again later.');
+    }
   }
 };
 
 // Appointment service
 export const rendezVousService = {
-  getUserAppointments: () => {
-    return fetchApi("appointments");
+  getUserAppointments: async () => {
+    try {
+      return await fetchApi("appointments");
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      throw new Error('Failed to load appointments. Please try again later.');
+    }
   },
   
-  createAppointment: (appointmentData) => {
-    return fetchApi("appointments", {
-      method: "POST",
-      body: appointmentData
-    });
+  createAppointment: async (appointmentData) => {
+    try {
+      return await fetchApi("appointments", {
+        method: "POST",
+        body: appointmentData
+      });
+    } catch (error) {
+      console.error('Error creating appointment:', error);
+      if (error.message.includes('déjà réservé') || error.message.includes('already booked')) {
+        throw new Error('This time slot is already booked. Please select a different time.');
+      }
+      throw new Error('Failed to book appointment. Please try again later.');
+    }
   },
   
-  cancelAppointment: (id) => {
-    return fetchApi(`appointments/${id}/cancel`, {
-      method: "PUT"
-    });
+  cancelAppointment: async (id) => {
+    try {
+      return await fetchApi(`appointments/${id}/cancel`, {
+        method: "PUT"
+      });
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
+      throw new Error('Failed to cancel appointment. Please try again later.');
+    }
+  },
+  
+  // New function to check availability of a time slot
+  checkAvailability: async (barbierId, date) => {
+    try {
+      // Convert date to ISO string for API
+      const formattedDate = date instanceof Date ? date.toISOString() : date;
+      
+      return await fetchApi(`appointments/check-availability?barbierId=${barbierId}&date=${formattedDate}`, {
+        method: "GET"
+      });
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      throw new Error('Failed to check time slot availability. Please try again later.');
+    }
+  }
+};
+
+// Function to refresh user info across the app
+export const refreshUserInfo = async () => {
+  try {
+    if (authService.isLoggedIn()) {
+      await authService.getProfile();
+    }
+    return true;
+  } catch (error) {
+    console.error('Error refreshing user info:', error);
+    return false;
   }
 };
 
 export default {
   authService,
   barbierService,
-  rendezVousService
+  rendezVousService,
+  refreshUserInfo
 };

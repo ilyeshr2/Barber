@@ -14,6 +14,9 @@
           <!-- Loading indicator -->
           <ActivityIndicator v-if="loading" busy="true" color="#ffcd50" />
           
+          <!-- Error message -->
+          <Label v-if="error" class="error-message" :text="error" textWrap="true" />
+          
           <StackLayout v-if="!loading && !error">
             <!-- Barber profile header -->
             <StackLayout class="barber-header">
@@ -21,13 +24,13 @@
               <Label :text="barbier ? barbier.nom : ''" class="barber-name" />
               <StackLayout class="stars-container">
                 <Label text="★★★★★" class="rating-stars" />
-                <Label :text="(barbier ? barbier.nombreAvis : 0) + ' Reviews'" class="reviews-count" />
+                <Label :text="(barbier ? barbier.nombreAvis : 0) + ' avis'" class="reviews-count" />
               </StackLayout>
             </StackLayout>
             
             <!-- Services section -->
             <StackLayout class="section-container">
-              <Label text="Services Offered" class="section-title" />
+              <Label text="Services proposés" class="section-title" />
               <StackLayout class="services-list">
                 <GridLayout v-for="service in services" :key="service.id" 
                             columns="auto, *, auto" rows="auto, auto" class="service-item" @tap="selectionnerService(service)">
@@ -39,13 +42,12 @@
                   <Label :text="service.prix + ' DA'" class="service-price" col="2" row="0" rowSpan="2" verticalAlignment="center" />
                 </GridLayout>
               </StackLayout>
-              
             </StackLayout>
 
             
             <!-- Available dates section -->
             <StackLayout class="section-container">
-              <Label text="Available dates" class="section-title" />
+              <Label text="Dates disponibles" class="section-title" />
               <ScrollView orientation="horizontal" class="dates-scroll">
                 <StackLayout orientation="horizontal">
                   <StackLayout v-for="date in dates" :key="date.id" 
@@ -62,14 +64,20 @@
             
             <!-- Available schedules section -->
             <StackLayout class="section-container">
-              <Label text="Available schedules" class="section-title" />
+              <Label text="Horaires disponibles" class="section-title" />
               
               <!-- No service selected message -->
-              <Label v-if="!selectedService" text="No service selected" class="no-selection-text" />
+              <Label v-if="!selectedService" text="Veuillez d'abord sélectionner un service" class="no-selection-text" />
+              
+              <!-- Loading indicator -->
+              <ActivityIndicator v-else-if="timeSlotLoading" busy="true" color="#ffcd50" />
+              
+              <!-- No available slots message -->
+              <Label v-else-if="horaires.length === 0" text="Aucun créneau disponible pour la date et le service sélectionnés. Veuillez essayer une autre date." class="no-selection-text" textWrap="true" />
               
               <!-- Time slots grid -->
               <GridLayout v-else columns="*, *, *" rows="auto, auto, auto, auto, auto, auto, auto, auto" class="schedules-grid">
-                <StackLayout v-for="(horaire, index) in horaires" :key="horaire.id"
+                <StackLayout v-for="(horaire, index) in horaires" :key="index"
                           :row="Math.floor(index/3)" :col="index%3"
                           class="schedule-item" :class="{ 'schedule-selected': horaire.selected }"
                           @tap="selectionnerHoraire(horaire)">
@@ -81,15 +89,9 @@
             
             <!-- Voucher section -->
             <StackLayout class="section-container">
-              <Label text="Voucher" class="section-title" />
-              <Label text="No promotion code available" class="no-voucher-text" />
+              <Label text="Bon de réduction" class="section-title" />
+              <Label text="Aucun code promotionnel disponible" class="no-voucher-text" />
             </StackLayout>
-          </StackLayout>
-          
-          <!-- Error message -->
-          <StackLayout v-if="error" class="error-container">
-            <Label :text="error" class="error-message" textWrap="true" />
-            <Button text="Retry" @tap="loadBarberDetails" class="retry-button" />
           </StackLayout>
           
           <!-- Add extra space at bottom to ensure content isn't hidden behind footer -->
@@ -100,7 +102,7 @@
       <!-- Sticky Footer -->
       <GridLayout row="2" class="sticky-footer">
         <!-- Book Button -->
-        <Button text="Book" @tap="reserver" class="book-button" />
+        <Button text="Réserver" @tap="reserver" class="book-button" />
       </GridLayout>
       
       <!-- Bottom sheet modal -->
@@ -110,7 +112,7 @@
           <StackLayout class="indicator-bar"></StackLayout>
           
           <!-- Confirmation content -->
-          <Label text="Your Appointment" class="sheet-title" />
+          <Label text="Votre rendez-vous" class="sheet-title" />
           
           <!-- Appointment details -->
           <GridLayout rows="auto, auto, auto" columns="auto, *" class="details-grid">
@@ -119,7 +121,7 @@
             <Label :text="formatConfirmationDate()" class="details-value" row="0" col="1" />
             
             <!-- With -->
-            <Label text="With:" class="details-label" row="1" col="0" />
+            <Label text="Avec:" class="details-label" row="1" col="0" />
             <Label :text="barbier ? barbier.nom : ''" class="details-value" row="1" col="1" />
             
             <!-- Services -->
@@ -128,16 +130,16 @@
           </GridLayout>
           
           <!-- Price -->
-          <Label :text="selectedService ? selectedService.prix + ' $' : ''" class="price" />
-          
-          <!-- Confirm button -->
-          <Button text="I confirm" @tap="confirmerReservation" class="confirm-button" />
+          <Label :text="selectedService ? selectedService.prix + ' DA' : ''" class="price" />
           
           <!-- Loading indicator -->
           <ActivityIndicator v-if="confirming" busy="true" color="#ffcd50" class="loading-indicator" />
           
           <!-- Error message -->
           <Label v-if="confirmationError" class="error-message" :text="confirmationError" textWrap="true" />
+          
+          <!-- Confirm button -->
+          <Button text="Je confirme" @tap="confirmerReservation" class="confirm-button" v-if="!confirming" />
         </StackLayout>
       </StackLayout>
     </GridLayout>
@@ -145,6 +147,7 @@
 </template>
   
 <script>
+// Complete script for DetailsBarbier.vue
 import { barbierService, rendezVousService, authService } from '../services/api';
 import { generateAvailableDates, generateTimeSlots, formatDate, formatDisplayTime } from '../utils/helpers';
 import { confirm, alert } from '@nativescript/core/ui/dialogs';
@@ -161,7 +164,7 @@ export default {
       barbier: null,
       services: [],
       dates: generateAvailableDates(),
-      horaires: generateTimeSlots(),
+      horaires: [],
       selectedService: null,
       selectedDate: null,
       selectedHoraire: null,
@@ -171,7 +174,9 @@ export default {
       showConfirmationModal: false,
       confirming: false,
       confirmationError: '',
-      appointmentDate: null
+      appointmentDate: null,
+      timeSlotLoading: false,
+      reservedTimeSlots: [] // New property to store reserved time slots
     };
   },
   computed: {
@@ -227,20 +232,137 @@ export default {
       this.$navigateBack();
     },
     
-    toggleSection() {
-      // Your existing toggle functionality
+    async checkAndFilterTimeSlots() {
+      // Reset the horaires array and selected horaire
+      this.horaires = [];
+      this.selectedHoraire = null;
+      
+      if (!this.selectedService || !this.selectedDate || !this.barbier) {
+        console.log('Missing required data for time slot filtering');
+        return;
+      }
+      
+      this.timeSlotLoading = true;
+      
+      try {
+        // Get all possible time slots for the day
+        const allPossibleSlots = generateTimeSlots();
+        console.log(`Generated ${allPossibleSlots.length} possible time slots`);
+        
+        // Get the selected date
+        const selectedDate = new Date(this.selectedDate.date);
+        const formattedDate = selectedDate.toISOString();
+        console.log(`Checking availability for date: ${formattedDate}`);
+        
+        // Get the service duration
+        const serviceDuration = this.selectedService.duree;
+        console.log(`Service duration: ${serviceDuration} minutes`);
+        
+        // Get availability data from API
+        const availabilityData = await rendezVousService.checkAvailability(
+          this.barbier.id,
+          formattedDate
+        );
+        
+        // Extract unavailable time ranges
+        this.reservedTimeSlots = availabilityData.unavailableSlots.map(slot => ({
+          start: new Date(slot.startTime),
+          end: new Date(slot.endTime),
+          serviceName: slot.serviceName
+        }));
+        
+        console.log(`Found ${this.reservedTimeSlots.length} reserved time slots:`);
+        this.reservedTimeSlots.forEach(slot => {
+          console.log(`- ${slot.serviceName}: ${slot.start.toLocaleTimeString()} to ${slot.end.toLocaleTimeString()}`);
+        });
+        
+        // Filter slots based on conflicts
+        const availableSlots = [];
+        
+        for (const slot of allPossibleSlots) {
+          // Convert slot time to Date object
+          const [hours, minutes] = slot.heure.split(':').map(Number);
+          const slotStart = new Date(selectedDate);
+          slotStart.setHours(hours, minutes, 0, 0);
+          
+          // Calculate slot end time based on service duration
+          const slotEnd = new Date(slotStart.getTime() + serviceDuration * 60 * 1000);
+          
+          // Check if slot would extend past business hours (6:00 PM)
+          const businessEnd = new Date(selectedDate);
+          businessEnd.setHours(18, 0, 0, 0);
+          
+          if (slotEnd > businessEnd) {
+            console.log(`Slot ${slot.heure} extends past business hours, skipping`);
+            continue;
+          }
+          
+          // Check for conflicts with reserved slots
+          let hasConflict = false;
+          
+          for (const reserved of this.reservedTimeSlots) {
+            // Check for any overlap between the potential appointment and existing ones
+            if (
+              (slotStart >= reserved.start && slotStart < reserved.end) || // Slot starts during reserved time
+              (slotEnd > reserved.start && slotEnd <= reserved.end) || // Slot ends during reserved time
+              (slotStart <= reserved.start && slotEnd >= reserved.end) // Slot contains reserved time
+            ) {
+              console.log(`Conflict: Slot ${slot.heure} conflicts with reserved time ${reserved.start.toLocaleTimeString()} - ${reserved.end.toLocaleTimeString()}`);
+              hasConflict = true;
+              break;
+            }
+          }
+          
+          if (!hasConflict) {
+            console.log(`Slot ${slot.heure} is available`);
+            availableSlots.push({
+              id: slot.id,
+              heure: slot.heure,
+              selected: false
+            });
+          }
+        }
+        
+        // Update the horaires array with available slots
+        this.horaires = availableSlots;
+        console.log(`Set ${this.horaires.length} available time slots`);
+      } catch (error) {
+        console.error('Error filtering time slots:', error);
+        this.horaires = []; // On error, show no slots
+      } finally {
+        this.timeSlotLoading = false;
+      }
     },
     
     selectionnerService(service) {
       this.services.forEach(s => s.selected = false);
       service.selected = true;
       this.selectedService = service;
+      
+      // Reset time slot selection when service changes
+      this.horaires = [];
+      this.selectedHoraire = null;
+      
+      // If we have a date selected, check available time slots
+      if (this.selectedDate) {
+        this.checkAndFilterTimeSlots(); // Use our new function instead
+      }
     },
     
     selectionnerDate(date) {
+      // Clear previous time selection
+      this.horaires = [];
+      this.selectedHoraire = null;
+      
+      // Set new date selection
       this.dates.forEach(d => d.selected = false);
       date.selected = true;
       this.selectedDate = date;
+      
+      // If we have a service selected, check available time slots
+      if (this.selectedService) {
+        this.checkAndFilterTimeSlots(); // Use our new function instead
+      }
     },
     
     selectionnerHoraire(horaire) {
@@ -315,6 +437,13 @@ export default {
         // Hide modal after successful booking
         this.showConfirmationModal = false;
         
+        // Show success message
+        await alert({
+          title: "Appointment Confirmed",
+          message: "Your appointment has been successfully booked!",
+          okButtonText: "OK"
+        });
+        
         // Navigate to appointments page
         this.$navigateTo(require('./Rendez-vous').default, {
           clearHistory: true
@@ -344,6 +473,7 @@ export default {
   padding: 5 16;
   height: 50;
 }
+
 .sticky-footer {
   background-color: #000000;
   padding: 10 16;
@@ -351,6 +481,7 @@ export default {
   border-top-width: 1;
   border-top-color: #222222;
 }
+
 .stars-container {
   flex-direction: row;
   align-items: center;
@@ -382,9 +513,11 @@ export default {
 .content-container {
   background-color: #000000;
 }
+
 .barber-pic-h{
-border-radius: 100;
+  border-radius: 100;
 }
+
 .back-button {
   font-size: 20;
   background-color: #222222;
@@ -506,8 +639,6 @@ border-radius: 100;
   text-align: right;
 }
 
-
-
 .dates-scroll {
   margin-bottom: 5;
   height: 85;
@@ -588,16 +719,6 @@ border-radius: 100;
   font-size: 16;
   text-align: center;
   padding: 20 0;
-}
-
-.book-button {
-  background-color: #ffcd50;
-  color: #000000;
-  font-size: 18;
-  font-weight: bold;
-  height: 55;
-  margin: 15;
-  border-radius: 30;
 }
 
 .error-container {
@@ -701,6 +822,6 @@ border-radius: 100;
 }
 
 .loading-indicator {
-  margin-top: 10;
+  margin: 20;
 }
 </style>

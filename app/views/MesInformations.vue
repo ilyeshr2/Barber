@@ -5,7 +5,7 @@
       <!-- Header in the first row -->
       <GridLayout row="0" columns="auto, *" class="header">
         <Button text="<" @tap="retour" class="btn-retour" col="0" />
-        <Label text="My Informations" class="page-title" col="1" />
+        <Label text="Mes informations" class="page-title" col="1" />
       </GridLayout>
       
       <!-- Content in the second row -->
@@ -24,7 +24,7 @@
           <StackLayout v-if="!loading && !errorMessage" class="form-container">
             <!-- Nom et prénom sur la même ligne -->
             <GridLayout class="input-container" rows="auto, auto" columns="*">
-              <Label text="First and Last Name:" class="input-label" row="0" col="0" />
+              <Label text="Prénom et Nom:" class="input-label" row="0" col="0" />
               <GridLayout columns="*, *" rows="auto" class="name-fields margin-top" row="1" col="0">
                 <TextField v-model="prenom" hint="_____________" class="text-field" col="0" />
                 <TextField v-model="nom" hint="_____________" class="text-field margin-left" col="1" />
@@ -33,7 +33,7 @@
             
             <!-- Date de naissance -->
             <GridLayout class="input-container date-container" rows="auto, auto" columns="*, auto">
-              <Label text="Date of Birth:" class="input-label" row="0" col="0" verticalAlignment="center" />
+              <Label text="Date de naissance:" class="input-label" row="0" col="0" verticalAlignment="center" />
               <Label :text="formattedDate" @tap="showDatePicker" class="date-display" row="0" col="1" horizontalAlignment="right" />
               <Button text="OK" @tap="hideDatePicker" class="ok-button" row="0" col="2" horizontalAlignment="right" :visibility="isDatePickerVisible ? 'visible' : 'collapsed'" />
               <DatePicker ref="datePicker" v-model="dateNaissance" row="1" colSpan="3" :visibility="isDatePickerVisible ? 'visible' : 'collapsed'" @dateChange="onDateChange" class="date-picker" />
@@ -41,7 +41,7 @@
             
             <!-- Genre -->
             <GridLayout class="input-container gender-container" rows="auto" columns="*, *">
-              <Label text="Gender:" class="input-label" row="0" col="0" verticalAlignment="center" />
+              <Label text="Genre:" class="input-label" row="0" col="0" verticalAlignment="center" />
               <StackLayout @tap="showGenderPicker" class="gender-display-container" row="0" col="1" horizontalAlignment="right">
                 <GridLayout columns="auto, auto" verticalAlignment="center">
                   <Label :text="genreDisplay[genre]" class="gender-display-text" col="0" />
@@ -52,7 +52,7 @@
             
             <!-- Téléphone -->
             <GridLayout class="phone-container" rows="auto, auto" columns="*">
-              <Label text="Phone:" class="phone-label" row="0" col="0" />
+              <Label text="Téléphone:" class="phone-label" row="0" col="0" />
               
               <GridLayout rows="auto" columns="auto, *" class="phone-input-row" row="1" col="0">
                 <StackLayout row="0" col="0" class="country-code-box">
@@ -69,8 +69,8 @@
             
             <!-- Email (facultatif) -->
             <GridLayout class="input-container" rows="auto, auto" columns="*">
-              <Label text="Email: (optional)" class="input-label" row="0" col="0" />
-              <TextField v-model="email" hint="Your email" keyboardType="email" class="text-field margin-top" row="1" col="0" />
+              <Label text="Email: (optionnel)" class="input-label" row="0" col="0" />
+              <TextField v-model="email" hint="Votre email" keyboardType="email" class="text-field margin-top" row="1" col="0" />
             </GridLayout>
           </StackLayout>
         </StackLayout>
@@ -80,15 +80,14 @@
       <GridLayout row="2" rows="auto, auto" class="sticky-footer">
         <StackLayout row="0" class="gradient-transition"></StackLayout>
         <StackLayout row="1" class="footer-content">
-          <Button text="Save" @tap="enregistrer" class="btn-save" :isEnabled="!isSaving" />
+          <Button text="Enregistrer" @tap="enregistrer" class="btn-save" :isEnabled="!isSaving" />
           <ActivityIndicator v-if="isSaving" busy="true" color="#ffcd50" />
-          <Label text="Delete my account" @tap="supprimerCompte" class="delete-account" />
+          <Label text="Supprimer mon compte" @tap="supprimerCompte" class="delete-account" />
         </StackLayout>
       </GridLayout>
     </GridLayout>
   </Page>
 </template>
-
 <script>
 import { authService } from '../services/api';
 import * as ApplicationSettings from "@nativescript/core/application-settings";
@@ -350,6 +349,7 @@ export default {
   color: #ff4d4d;
   text-align: center;
   margin-bottom: 15;
+  font-size: 16;
 }
 
 .form-container {
@@ -487,5 +487,9 @@ export default {
   text-align: center;
   margin-bottom: 10;
   background-color: transparent;
-  }
+}
+
+.loading-indicator {
+  margin: 20;
+}
 </style>

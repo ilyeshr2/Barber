@@ -5,7 +5,7 @@
       <!-- En-tête -->
       <GridLayout columns="*, auto" class="header" row="0">
         <Image src="~/assets/images/yaniso-logo.png" class="app-icon" col="1" />
-        <Label text="Settings" class="settings-title" col="0" />
+        <Label text="Paramètres" class="settings-title" col="0" />
       </GridLayout>
 
       <!-- Contenu principal -->
@@ -18,19 +18,25 @@
             <Label :text="userPhone" class="profile-phone" textWrap="true" />
           </StackLayout>
 
+          <!-- Loading indicator -->
+          <ActivityIndicator v-if="loading" busy="true" color="#FFCC33" />
+
+          <!-- Error message -->
+          <Label v-if="error" class="error-message" :text="error" textWrap="true" />
+
           <!-- Options de paramètres -->
-          <StackLayout class="settings-options">
+          <StackLayout v-if="!loading && !error" class="settings-options">
             <!-- Mes informations -->
             <GridLayout columns="auto, *, auto" class="setting-item" @tap="allerVersMesInformations">
               <Image src="~/assets/images/user.png" class="setting-icon" col="0" />
-              <Label text="My Informations" class="setting-text" col="1" />
+              <Label text="Mes informations" class="setting-text" col="1" />
               <Image src="~/assets/images/arrow-right.png" class="arrow-icon" col="2" />
             </GridLayout>
 
             <!-- Mode sombre -->
             <GridLayout columns="auto, *, auto" class="setting-item">
               <Image src="~/assets/images/moon.png" class="setting-icon" col="0" />
-              <Label text="Dark Mode" class="setting-text" col="1" />
+              <Label text="Mode sombre" class="setting-text" col="1" />
               <StackLayout col="2" class="toggle-wrapper" @tap="toggleDarkMode">
                 <GridLayout columns="*" rows="*" class="toggle-background" :class="{ 'toggle-active': darkModeEnabled }">
                   <StackLayout col="0" row="0" class="toggle-circle" :class="{ 'toggle-circle-active': darkModeEnabled }"></StackLayout>
@@ -41,14 +47,14 @@
             <!-- À propos -->
             <GridLayout columns="auto, *, auto" class="setting-item" @tap="allerVersAPropos">
               <Image src="~/assets/images/info.png" class="setting-icon" col="0" />
-              <Label text="About Us" class="setting-text" col="1" />
+              <Label text="À propos" class="setting-text" col="1" />
               <Image src="~/assets/images/arrow-right.png" class="arrow-icon" col="2" />
             </GridLayout>
           </StackLayout>
 
           <!-- Déconnexion / Connexion -->
-          <Button v-if="isLoggedIn" text="Log Out" @tap="deconnexion" class="logout-button" />
-          <Button v-else text="Log In" @tap="connexion" class="login-button" />
+          <Button v-if="isLoggedIn" text="Déconnexion" @tap="deconnexion" class="logout-button" />
+          <Button v-else text="Connexion" @tap="connexion" class="login-button" />
         </StackLayout>
       </ScrollView>
 
@@ -68,7 +74,7 @@
         </StackLayout>
         <StackLayout col="3" class="nav-item active" @tap="allerVersPage('Parametres')">
           <Image src="~/assets/images/settings.png" class="nav-icon" />
-          <Label text="Parametres" class="nav-text" />
+          <Label text="Paramètres" class="nav-text" />
         </StackLayout>
       </GridLayout>
     </GridLayout>
@@ -400,5 +406,16 @@ export default {
 
 .active .nav-icon {
   filter: brightness(0) saturate(100%) invert(80%) sepia(70%) saturate(681%) hue-rotate(359deg) brightness(102%) contrast(103%);
+}
+
+.error-message {
+  color: #ff4d4d;
+  text-align: center;
+  margin: 20;
+  font-size: 16;
+}
+
+.loading-indicator {
+  margin: 50;
 }
 </style>
