@@ -91,7 +91,9 @@ export default {
     return {
       userInfo: null,
       darkModeEnabled: true, // Default to true since your switch was checked
-      isFirstLoad: true
+      isFirstLoad: true,
+      loading: false,
+      error: null
     };
   },
   computed: {
@@ -102,7 +104,7 @@ export default {
       if (this.userInfo) {
         return `${this.userInfo.prenom || ''} ${this.userInfo.nom || ''}`;
       }
-      return 'user'; // Default name
+      return 'Utilisateur'; // Default name
     },
     userPhone() {
       // Try to get phone from userInfo
@@ -150,10 +152,10 @@ export default {
       if (!this.isLoggedIn) {
         // If not logged in, show confirmation dialog
         confirm({
-          title: "Login Required",
-          message: "You need to be logged in to access your information. Would you like to log in?",
-          okButtonText: "Log In",
-          cancelButtonText: "Cancel"
+          title: "Connexion requise",
+          message: "Vous devez être connecté pour accéder à vos informations. Voulez-vous vous connecter maintenant?",
+          okButtonText: "Se connecter",
+          cancelButtonText: "Annuler"
         }).then(result => {
           if (result) {
             this.$navigateTo(require('./Connexion').default);
@@ -175,10 +177,10 @@ export default {
 
     async deconnexion() {
       const result = await confirm({
-        title: "Log Out",
-        message: "Are you sure you want to log out?",
-        okButtonText: "Yes",
-        cancelButtonText: "No"
+        title: "Déconnexion",
+        message: "Êtes-vous sûr de vouloir vous déconnecter?",
+        okButtonText: "Oui",
+        cancelButtonText: "Non"
       });
 
       if (result) {
@@ -213,12 +215,16 @@ export default {
 
     async fetchProfile() {
       try {
+        this.loading = true;
         console.log('Fetching user profile');
         await authService.getProfile();
         this.refreshUserInfo();
         this.ensurePhoneNumber();
       } catch (error) {
         console.error('Error fetching profile:', error);
+        this.error = "Impossible de charger le profil";
+      } finally {
+        this.loading = false;
       }
     },
 

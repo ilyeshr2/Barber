@@ -126,7 +126,9 @@ export default {
           liked: false
         }
       ],
-      userInfo: null
+      userInfo: null,
+      loading: false,
+      error: null
     };
   },
   computed: {
@@ -135,7 +137,7 @@ export default {
         return this.userInfo.prenom;
       }
       const user = authService.getUser();
-      return user ? user.prenom : 'Citric acid';
+      return user ? user.prenom : 'Utilisateur';
     }
   },
   mounted() {

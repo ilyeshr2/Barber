@@ -44,7 +44,7 @@
             
             <!-- Crédits -->
             <Label text="Conçu et Développé Par" class="credits-text" />
-            <Label text="Mohamed SAHNINE" class="developer-name" />
+            <Label text="Institut Grasset" class="developer-name" />
           </StackLayout>
         </StackLayout>
       </ScrollView>
