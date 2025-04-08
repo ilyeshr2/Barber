@@ -1,4 +1,4 @@
-<!-- app/views/Parametres.vue -->
+<!-- app/views/Parametres.vue (Updated) -->
 <template>
   <Page actionBarHidden="true">
     <GridLayout rows="auto, *, auto">
@@ -59,24 +59,7 @@
       </ScrollView>
 
       <!-- Barre de navigation -->
-      <GridLayout columns="*, *, *, *" class="nav-bar" row="2">
-        <StackLayout col="0" class="nav-item" @tap="allerVersPage('PeloStudio')">
-          <Image src="~/assets/images/home.png" class="nav-icon" />
-          <Label text="Pelo Studio" class="nav-text" />
-        </StackLayout>
-        <StackLayout col="1" class="nav-item" @tap="allerVersPage('Barbiers')">
-          <Image src="~/assets/images/cut.png" class="nav-icon" />
-          <Label text="Barbiers" class="nav-text" />
-        </StackLayout>
-        <StackLayout col="2" class="nav-item" @tap="allerVersPage('Rendez-vous')">
-          <Image src="~/assets/images/calendar.png" class="nav-icon" />
-          <Label text="Rendez-vous" class="nav-text" />
-        </StackLayout>
-        <StackLayout col="3" class="nav-item active" @tap="allerVersPage('Parametres')">
-          <Image src="~/assets/images/settings.png" class="nav-icon" />
-          <Label text="Paramètres" class="nav-text" />
-        </StackLayout>
-      </GridLayout>
+      <NavigationBar row="2" currentPage="Parametres" />
     </GridLayout>
   </Page>
 </template>
@@ -85,8 +68,12 @@
 import { authService } from '../services/api';
 import { confirm } from '@nativescript/core/ui/dialogs';
 import * as ApplicationSettings from '@nativescript/core/application-settings';
+import NavigationBar from '../components/NavigationBar';
 
 export default {
+  components: {
+    NavigationBar
+  },
   data() {
     return {
       userInfo: null,
@@ -141,13 +128,6 @@ export default {
     }
   },
   methods: {
-    allerVersPage(page) {
-      if (page === 'Parametres') {
-        return; // Déjà sur cette page
-      }
-      this.$navigateTo(require(`./${page}`).default);
-    },
-
     allerVersMesInformations() {
       if (!this.isLoggedIn) {
         // If not logged in, show confirmation dialog
@@ -365,11 +345,9 @@ export default {
   background-color: #222222;
   color: #d35b63;
   border-radius: 15;
-  height: 50;
   font-size: 20;
   margin: 90 0 20 0;
-  padding: 0 0;
-  height: 70;
+  height: 60;
 }
 
 .login-button {
@@ -380,38 +358,6 @@ export default {
   font-size: 18;
   margin: 30 0 20 0;
   height: 70;
-}
-
-.nav-bar {
-  background-color: #000000;
-  border-top-color: #333333;
-  height: 70;
-  padding-bottom: 5;
-}
-
-.nav-item {
-  text-align: center;
-  padding: 10 0;
-}
-
-.nav-icon {
-  width: 22;
-  height: 22;
-  margin-bottom: 3;
-}
-
-.nav-text {
-  color: #888888;
-  font-size: 12;
-  text-align: center;
-}
-
-.active .nav-text {
-  color: #FFCC33;
-}
-
-.active .nav-icon {
-  filter: brightness(0) saturate(100%) invert(80%) sepia(70%) saturate(681%) hue-rotate(359deg) brightness(102%) contrast(103%);
 }
 
 .error-message {

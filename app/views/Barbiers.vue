@@ -1,4 +1,4 @@
-<!-- app/views/Barbiers.vue -->
+<!-- app/views/Barbiers.vue (Updated) -->
 <template>
   <Page actionBarHidden="true">
     <GridLayout rows="auto, *, auto">
@@ -23,7 +23,7 @@
             <StackLayout class="store-box">
               <Image src="~/assets/images/shop-icon.png" class="salon-icon" col="0" />
             </StackLayout>
-            <Label text="Le Pelo Cité Djamel, Oran" class="salon-name" col="1" />
+            <Label text="Rue Jean-Talon E, Montréal" class="salon-name" col="1" />
           </GridLayout>
 
           <!-- Loading indicator -->
@@ -56,32 +56,19 @@
       </ScrollView>
 
       <!-- Bottom navigation bar -->
-      <GridLayout row="2" columns="*, *, *, *" class="nav-bar">
-        <StackLayout col="0" class="nav-item" @tap="allerVersPage('PeloStudio')">
-          <Image src="~/assets/images/home-icon.png" class="nav-icon" />
-          <Label text="Pelo Studio" class="nav-text" />
-        </StackLayout>
-        <StackLayout col="1" class="nav-item active" @tap="allerVersPage('Barbiers')">
-          <Image src="~/assets/images/barber-icon.png" class="nav-icon" />
-          <Label text="Barbiers" class="nav-text" />
-        </StackLayout>
-        <StackLayout col="2" class="nav-item" @tap="allerVersPage('Rendez-vous')">
-          <Image src="~/assets/images/calendar-icon.png" class="nav-icon" />
-          <Label text="Rendez-vous" class="nav-text" />
-        </StackLayout>
-        <StackLayout col="3" class="nav-item" @tap="allerVersPage('Parametres')">
-          <Image src="~/assets/images/settings-icon.png" class="nav-icon" />
-          <Label text="Paramètres" class="nav-text" />
-        </StackLayout>
-      </GridLayout>
+      <NavigationBar row="2" currentPage="Barbiers" />
     </GridLayout>
   </Page>
 </template>
 
 <script>
 import { barbierService, authService } from '../services/api';
+import NavigationBar from '../components/NavigationBar';
 
 export default {
+  components: {
+    NavigationBar
+  },
   data() {
     return {
       barbiers: [],
@@ -129,13 +116,6 @@ export default {
       } finally {
         this.loading = false;
       }
-    },
-
-    allerVersPage(page) {
-      if (page === 'Barbiers') {
-        return; // Already on this page
-      }
-      this.$navigateTo(require(`./${page}`).default);
     },
 
     voirDetailsBarbier(barbier) {
@@ -318,38 +298,6 @@ export default {
   margin: 20;
   padding: 20;
   font-size: 16;
-}
-
-/* Navigation bar */
-.nav-bar {
-  background-color: #000000;
-  height: 70;
-  border-top-width: 1;
-  border-top-color: #1a1a1a;
-}
-
-.nav-item {
-  text-align: center;
-  padding: 10 0;
-}
-
-.nav-icon {
-  width: 24;
-  height: 24;
-  margin-bottom: 5;
-}
-
-.nav-text {
-  color: #999999;
-  font-size: 12;
-}
-
-.active .nav-text {
-  color: #ffcd50;
-}
-
-.active .nav-icon {
-  filter: sepia(100%) saturate(10000%) hue-rotate(20deg);
 }
 
 .loading-indicator {

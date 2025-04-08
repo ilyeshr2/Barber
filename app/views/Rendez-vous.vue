@@ -1,3 +1,4 @@
+<!-- app/views/Rendez-vous.vue (Updated) -->
 <template>
   <Page actionBarHidden="true">
     <GridLayout rows="auto, auto, *, auto">
@@ -79,24 +80,7 @@
       </ScrollView>
 
       <!-- Barre de navigation -->
-      <GridLayout columns="*, *, *, *" class="nav-bar" row="3">
-        <StackLayout col="0" class="nav-item" @tap="allerVersPage('PeloStudio')">
-          <Image src="~/assets/images/home-icon.png" class="nav-icon" />
-          <Label text="Pelo Studio" class="nav-text" />
-        </StackLayout>
-        <StackLayout col="1" class="nav-item" @tap="allerVersPage('Barbiers')">
-          <Image src="~/assets/images/barber-icon.png" class="nav-icon" />
-          <Label text="Barbiers" class="nav-text" />
-        </StackLayout>
-        <StackLayout col="2" class="nav-item active" @tap="allerVersPage('Rendez-vous')">
-          <Image src="~/assets/images/calendar-icon.png" class="nav-icon" />
-          <Label text="Rendez-vous" class="nav-text" />
-        </StackLayout>
-        <StackLayout col="3" class="nav-item" @tap="allerVersPage('Parametres')">
-          <Image src="~/assets/images/settings-icon.png" class="nav-icon" />
-          <Label text="Paramètres" class="nav-text" />
-        </StackLayout>
-      </GridLayout>
+      <NavigationBar row="3" currentPage="Rendez-vous" />
     </GridLayout>
   </Page>
 </template>
@@ -105,8 +89,12 @@
 import { rendezVousService, authService } from '../services/api';
 import { formatAppointmentDate, formatDisplayTime } from '../utils/helpers';
 import { confirm } from '@nativescript/core/ui/dialogs';
+import NavigationBar from '../components/NavigationBar';
 
 export default {
+  components: {
+    NavigationBar
+  },
   data() {
     return {
       rendezVous: [],
@@ -190,13 +178,6 @@ export default {
 
     getServicePrice(rdv) {
       return rdv.Service ? rdv.Service.prix : 0;
-    },
-
-    allerVersPage(page) {
-      if (page === 'Rendez-vous') {
-        return; // Already on this page
-      }
-      this.$navigateTo(require(`./${page}`).default);
     },
 
     allerConnexion() {
@@ -427,39 +408,6 @@ export default {
   text-align: center;
   margin: 20;
   font-size: 16;
-}
-
-.nav-bar {
-  background-color: #000000;
-  border-top-color: #333333;
-  border-top-width: 1;
-  height: 70;
-  padding-top: 10;
-  padding-bottom: 10;
-}
-
-.nav-item {
-  text-align: center;
-  padding: 5;
-}
-
-.nav-icon {
-  width: 24;
-  height: 24;
-  margin-bottom: 5;
-}
-
-.nav-text {
-  color: #999999;
-  font-size: 12;
-}
-
-.active .nav-text {
-  color: #FFCC33;
-}
-
-.active .nav-icon {
-  filter: sepia(100%) saturate(10000%) hue-rotate(20deg);
 }
 
 .loading-indicator {

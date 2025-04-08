@@ -1,4 +1,4 @@
-<!-- app/views/PeloStudio.vue -->
+<!-- app/views/PeloStudio.vue (Updated) -->
 <template>
   <Page actionBarHidden="true">
     <GridLayout rows="auto, *, auto">
@@ -12,7 +12,7 @@
       <GridLayout row="1" rows="auto, *">
         <!-- Message de bienvenue -->
         <StackLayout row="0" class="welcome-container">
-          <Label text="Pelo Studio" class="welcome-title" />
+          <Label text="Yaniso Studio" class="welcome-title" />
           <Label :text="'Bonjour, ' + userName" class="welcome-text" />
           <Button text="Donnez-nous votre avis" class="review-button" />
         </StackLayout>
@@ -56,24 +56,7 @@
       </GridLayout>
       
       <!-- Barre de navigation -->
-      <GridLayout columns="*, *, *, *" class="nav-bar" row="2">
-        <StackLayout col="0" class="nav-item active" @tap="allerVersPage('PeloStudio')">
-          <Image src="~/assets/images/pelo-icon-gold.png" class="nav-icon" />
-          <Label text="Pelo Studio" class="nav-text" />
-        </StackLayout>
-        <StackLayout col="1" class="nav-item" @tap="allerVersPage('Barbiers')">
-          <Image src="~/assets/images/barber-chair.png" class="nav-icon" />
-          <Label text="Barbiers" class="nav-text" />
-        </StackLayout>
-        <StackLayout col="2" class="nav-item" @tap="allerVersPage('Rendez-vous')">
-          <Image src="~/assets/images/calendar-icon.png" class="nav-icon" />
-          <Label text="Rendez-vous" class="nav-text" />
-        </StackLayout>
-        <StackLayout col="3" class="nav-item" @tap="allerVersPage('Parametres')">
-          <Image src="~/assets/images/settings-icon.png" class="nav-icon" />
-          <Label text="Paramètres" class="nav-text" />
-        </StackLayout>
-      </GridLayout>
+      <NavigationBar row="2" currentPage="PeloStudio" />
       
     </GridLayout>
   </Page>
@@ -81,14 +64,18 @@
 
 <script>
 import { authService } from '../services/api';
+import NavigationBar from '../components/NavigationBar';
 
 export default {
+  components: {
+    NavigationBar
+  },
   data() {
     return {
       userAvatar: '~/assets/images/user-avatar.png',
       publications: [
         {
-          imageUrl: '~/assets/images/post1.jpg',
+          imageUrl: '~/assets/images/post1.png',
           reactions: '😘😘',
           authorName: 'Mahmoud',
           authorImage: '~/assets/images/mahmoud.jpg',
@@ -97,7 +84,7 @@ export default {
           liked: false
         },
         {
-          imageUrl: '~/assets/images/post2.jpg',
+          imageUrl: '~/assets/images/post2.png',
           reactions: '💈 🔥',
           authorName: 'Islem',
           authorImage: '~/assets/images/islem.jpg',
@@ -106,10 +93,10 @@ export default {
           liked: false
         },
         {
-          imageUrl: '~/assets/images/post3.jpg',
+          imageUrl: '~/assets/images/post3.png',
           title: 'Naps nous rend visite',
-          description: 'Une journée extraordinaire chez Pelo Studio ! 🎤 ✨ Nous avons eu l\'honneur d\'accueillir le talentueux rappeur Naps dans notre salon. Une expérience unique...',
-          authorName: 'Rafik Pelo',
+          description: 'Une journée extraordinaire chez Yaniso Studio ! 🎤 ✨ Nous avons eu l\'honneur d\'accueillir le talentueux rappeur Naps dans notre salon. Une expérience unique...',
+          authorName: 'Yaniso Rkik',
           authorImage: '~/assets/images/rafik.jpg',
           date: '16 Dec',
           reactions: '',
@@ -117,11 +104,11 @@ export default {
           liked: false
         },
         {
-          imageUrl: '~/assets/images/post4.jpg',
-          authorName: 'Rafik Pelo',
+          imageUrl: '~/assets/images/post4.png',
+          authorName: 'Yaniso Rkik',
           authorImage: '~/assets/images/rafik.jpg',
           date: '26 Aug',
-          description: 'تريد الاستفادة من بطاقة حرفي قرض angem أو ansej مرافقة إدارية - تريد تأسيس مشروعك الخاص نرافقك حتى فتح محل للحلاقة ✂️...',
+          description: 'Une journée inoubliable avec notre artiste dans notre studio ! ✨ Nous avons eu le plaisir d accueillir cette star pour une séance exclusive. Son style unique et sa personnalité rayonnante ont créé une ambiance exceptionnelle. Merci pour ces moments de créativité partagés ! #MomentPrivilégié #RencontreExceptionnelle ✂️...',
           seeMore: true,
           liked: false
         }
@@ -157,12 +144,6 @@ export default {
     }
   },
   methods: {
-    allerVersPage(page) {
-      if (page === 'PeloStudio') {
-        return; // Déjà sur cette page
-      }
-      this.$navigateTo(require(`./${page}`).default);
-    },
     likePost(index) {
       this.publications[index].liked = !this.publications[index].liked;
     },
@@ -180,7 +161,7 @@ export default {
 .header {
   background-color: #000000;
   padding: 10;
-  height: 60;
+  height: 70;
 }
 
 .user-avatar {
@@ -198,8 +179,8 @@ export default {
 }
 
 .app-icon {
-  width: 34;
-  height: 34;
+  width: 70;
+  height: 70;
   margin-right: 5;
 }
 
@@ -247,8 +228,10 @@ export default {
 
 .post-image {
   width: 100%;
-  height: 240;
-  border-radius: 20;
+  height: 450; 
+  max-height: 300px; 
+  border-radius: 20px;
+  object-fit: contain; 
 }
 
 .post-footer {
@@ -324,35 +307,6 @@ export default {
   font-size: 14;
   vertical-align: center;
   margin-left: 5;
-}
-
-.nav-bar {
-  background-color: #000000;
-  border-top-width: 0.5;
-  border-top-color: #333333;
-  height: 60;
-  padding-bottom: 5;
-}
-
-.nav-item {
-  text-align: center;
-  padding: 5 0;
-}
-
-.nav-icon {
-  width: 24;
-  height: 24;
-  margin-bottom: 3;
-}
-
-.nav-text {
-  color: #999999;
-  font-size: 12;
-}
-
-.active .nav-text {
-  color: #ffcc33;
-  font-weight: bold;
 }
 
 .error-message {

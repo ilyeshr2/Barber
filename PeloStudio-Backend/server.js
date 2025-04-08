@@ -39,7 +39,7 @@ const seedDatabase = async () => {
           
           barbers = await sequelize.models.Barbier.bulkCreate([
             {
-              nom: 'Rafik Pelo',
+              nom: 'Yaniso Rekik',
               photoUrl: 'https://i.imgur.com/1234.jpg',
               note: 5.0,
               nombreAvis: 8,

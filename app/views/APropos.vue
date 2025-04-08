@@ -4,7 +4,7 @@
     <GridLayout rows="auto, *">
       <!-- En-tête -->
       <GridLayout columns="auto, *" class="header" row="0">
-        <Button text="←" @tap="retour" class="btn-retour" col="0" />
+        <Button text="<" @tap="retour" class="btn-retour" col="0" />
         <Label text="À Propos" class="page-title" col="1" />
       </GridLayout>
       
@@ -12,30 +12,30 @@
       <ScrollView row="1">
         <StackLayout class="about-container">
           <!-- Logo -->
-          <Image src="~/assets/images/pelo-logo.png" class="logo" stretch="aspectFit" />
+          <Image src="~/assets/images/yaniso-logo.png" class="logo" stretch="aspectFit" />
           
           <!-- Contenu à propos -->
           <StackLayout class="about-content">
-            <Label text="Pelo Studio - Votre Compagnon Beauté pour Hommes" class="about-title" />
+            <Label text="Yaniso Studio - Votre Compagnon Beauté pour Hommes" class="about-title" />
             
-            <Label text="Découvrez une expérience de beauté exceptionnelle avec Pelo Studio, l'application tout-en-un qui vous permet de rester informé sur l'actualité passionnante du monde de la beauté masculine tout en réservant facilement des rendez-vous pour une variété de services." class="about-text" textWrap="true" />
+            <Label text="Découvrez une expérience de beauté exceptionnelle avec Yaniso Studio, l'application tout-en-un qui vous permet de rester informé sur l'actualité passionnante du monde de la beauté masculine tout en réservant facilement des rendez-vous pour une variété de services." class="about-text" textWrap="true" />
             
             <Label text="Actualités et Tendances" class="section-title" />
-            <Label text="Restez à jour avec les dernières tendances beauté pour hommes avec Pelo Studio. Explorez notre flux d'actualités pour découvrir des conseils et astuces beauté, des recommandations de produits de qualité, et des idées de coiffure à la pointe de la mode. Inspirez-vous et soyez toujours prêt à afficher votre meilleur look." class="about-text" textWrap="true" />
+            <Label text="Restez à jour avec les dernières tendances beauté pour hommes avec Yaniso Studio. Explorez notre flux d'actualités pour découvrir des conseils et astuces beauté, des recommandations de produits de qualité, et des idées de coiffure à la pointe de la mode. Inspirez-vous et soyez toujours prêt à afficher votre meilleur look." class="about-text" textWrap="true" />
             
             <Label text="Réservation Facile" class="section-title" />
             <Label text="Grâce à notre application conviviale, vous pouvez rapidement et facilement prendre rendez-vous avec nos experts en beauté. Que vous ayez besoin d'une coupe de cheveux fraîche, d'un soin du visage relaxant ou d'un massage revitalisant, Pelo Studio vous connecte avec des coiffeurs, masseurs et autres professionnels qualifiés pour vous aider à avoir une apparence et une sensation optimales." class="about-text" textWrap="true" />
             
             <Label text="Facilité d'Utilisation" class="section-title" />
-            <Label text="Notre application facile à utiliser rend la prise de rendez-vous chez Pelo Studio simple et rapide. Utilisez notre calendrier en ligne, choisissez le créneau horaire qui vous convient le mieux, sélectionnez votre service préféré, et réservez en quelques clics. Vous recevrez une confirmation instantanée de votre réservation, et vous serez prêt à vous faire plaisir." class="about-text" textWrap="true" />
+            <Label text="Notre application facile à utiliser rend la prise de rendez-vous chez Yaniso Studio simple et rapide. Utilisez notre calendrier en ligne, choisissez le créneau horaire qui vous convient le mieux, sélectionnez votre service préféré, et réservez en quelques clics. Vous recevrez une confirmation instantanée de votre réservation, et vous serez prêt à vous faire plaisir." class="about-text" textWrap="true" />
             
-            <Label text="Avec Pelo Studio, découvrez l'expérience beauté ultime pour hommes. Réservez vos rendez-vous, inspirez-vous des dernières tendances, et profitez de services de qualité supérieure. Soyez au top de votre style avec Pelo Studio !" class="about-text" textWrap="true" />
+            <Label text="Avec Yaniso Studio, découvrez l'expérience beauté ultime pour hommes. Réservez vos rendez-vous, inspirez-vous des dernières tendances, et profitez de services de qualité supérieure. Soyez au top de votre style avec Pelo Studio !" class="about-text" textWrap="true" />
             
             <!-- Informations de contact -->
-            <Label text="Service client: 041 70 95 95" class="contact-info" />
+            <Label text="Service client: 438-686-6697" class="contact-info" />
             
             <!-- Réseaux sociaux -->
-            <Label text="Rejoignez la Communauté Pelo" class="social-title" />
+            <Label text="Rejoignez la Communauté Yaniso" class="social-title" />
             <GridLayout columns="*, *, *" class="social-container">
               <Image src="~/assets/images/facebook-icon.png" class="social-icon" col="0" />
               <Image src="~/assets/images/instagram-icon.png" class="social-icon" col="1" />
@@ -70,14 +70,15 @@
   }
   
   .btn-retour {
-    font-size: 24;
-    background-color: #333333;
-    color: #ffffff;
-    border-radius: 20;
-    width: 40;
-    height: 40;
-    padding: 0;
-  }
+  font-size: 30;
+  background-color: #212121;
+  color: #ffffff;
+  border-radius: 20;
+  width: 40;
+  height: 40;
+  padding: 0;
+  text-align: center;
+}
   
   .page-title {
     color: #ffffff;
