@@ -1,3 +1,4 @@
+<!-- app/components/Home.vue -->
 <template>
     <Page>
         <ActionBar>
