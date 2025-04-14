@@ -1,52 +1,57 @@
-//routes.js
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// Import controllers
 const authController = require('./controllers/authController');
-const barbierController = require('./controllers/barbierController');
-const rendezVousController = require('./controllers/rendezVousController');
-const authMiddleware = require('./middlewares/authMiddleware');
-const { sequelize } = require('./models');
-const { Op } = require('sequelize');
+const barbersController = require('./controllers/barbierController');
+const servicesController = require('./controllers/servicesController');
+const appointmentsController = require('./controllers/appointmentsController');
+const salonController = require('./controllers/salonController');
+const publicationsController = require('./controllers/publicationController');
+const settingsController = require('./controllers/settingsController');
+
+// Import admin routes
+const adminAppointmentRoutes = require('./routes/admin/appointmentRoutes');
+const adminClientRoutes = require('./routes/admin/clientRoutes');
+const adminBarberRoutes = require('./routes/admin/barberRoutes');
+const adminServiceRoutes = require('./routes/admin/serviceRoutes');
+const adminSalonRoutes = require('./routes/admin/salonRoutes');
+const adminPublicationRoutes = require('./routes/admin/publicationRoutes');
+const adminSettingsRoutes = require('./routes/admin/settingsRoutes');
+
+// Import middleware
+const { authenticateToken } = require('./middlewares/authMiddleware');
 
 // Auth routes
 router.post('/auth/signup', authController.signup);
 router.post('/auth/login', authController.login);
-router.get('/auth/profile', authMiddleware, authController.getProfile);
-router.put('/auth/profile', authMiddleware, authController.updateProfile);
+router.get('/auth/profile', authenticateToken, authController.getProfile);
+router.put('/auth/profile', authenticateToken, authController.updateProfile);
 
-// Barber routes
-router.get('/barbers', barbierController.getAllBarbers);
-router.get('/barbers/:id', barbierController.getBarberById);
-router.get('/barbers/:id/services', barbierController.getBarberServices);
+// Public routes
+router.get('/salon', salonController.getSalonInfo);
+router.get('/barbers', barbersController.getAllBarbers);
+router.get('/barbers/:id', barbersController.getBarberById);
+router.get('/barbers/:id/services', barbersController.getBarberServices);
+router.get('/publications', publicationsController.getAllPublications);
+router.get('/settings', settingsController.getPublicSettings);
 
-// Appointment routes
-router.get('/appointments', authMiddleware, rendezVousController.getUserAppointments);
-router.post('/appointments', authMiddleware, rendezVousController.createAppointment);
-router.put('/appointments/:id/cancel', authMiddleware, rendezVousController.cancelAppointment);
+// Protected routes that require authentication
+router.get('/appointments', authenticateToken, appointmentsController.getUserAppointments);
+router.post('/appointments', authenticateToken, appointmentsController.createAppointment);
+router.put('/appointments/:id/cancel', authenticateToken, appointmentsController.cancelAppointment);
+router.get('/appointments/check-availability', appointmentsController.checkAvailability);
 
-// Make sure this route comes BEFORE the /:id ones to avoid path conflicts
-router.get('/appointments/check-availability', rendezVousController.checkAvailability);
-
-// Admin appointments routes (if needed)
-// router.get('/appointments/upcoming', authMiddleware, rendezVousController.getUpcomingAppointments);
-// router.put('/appointments/:id/complete', authMiddleware, rendezVousController.completeAppointment);
-
-// Debug endpoint
-router.get('/debug/services/:id', async (req, res) => {
-    try {
-      // Use direct SQL query to bypass potential Sequelize issues
-      const [results] = await sequelize.query(`
-        SELECT * FROM "Services" WHERE "BarberId" = ${req.params.id}
-      `);
-      
-      res.json({
-        count: results.length,
-        services: results
-      });
-    } catch (error) {
-      console.error('Debug endpoint error:', error);
-      res.status(500).json({ message: 'Error in debug endpoint', error: error.message });
-    }
-  });
+// Admin routes
+router.use('/admin/appointments', adminAppointmentRoutes);
+router.use('/admin/clients', adminClientRoutes);
+router.use('/admin/barbers', adminBarberRoutes);
+router.use('/admin/services', adminServiceRoutes);
+router.use('/admin/salon', adminSalonRoutes);
+router.use('/admin/publications', adminPublicationRoutes);
+router.use('/admin/settings', adminSettingsRoutes);
 
 module.exports = router;

@@ -1,10 +1,9 @@
-<!-- app/views/DetailsBarbier.vue -->
-<!-- app/views/DetailsBarbier.vue -->
+<!-- app/views/DetailsBarbier.vue (Updated for Dynamic Data) -->
 <template>
   <Page actionBarHidden="true">
     <GridLayout rows="auto, *, auto">
       <!-- Header with back button and barber info -->
-      <GridLayout row="0" columns="auto, *, auto" class="header">
+      <GridLayout row="0" columns="auto, *" class="header">
         <Button text="<" @tap="retour" class="back-button" col="0" />
       </GridLayout>
       
@@ -12,15 +11,18 @@
       <ScrollView row="1" class="content-container">
         <StackLayout>
           <!-- Loading indicator -->
-          <ActivityIndicator v-if="loading" busy="true" color="#ffcd50" />
+          <ActivityIndicator v-if="loading" busy="true" color="#ffcd50" class="loading-indicator" />
           
-          <!-- Error message -->
-          <Label v-if="error" class="error-message" :text="error" textWrap="true" />
+          <!-- Error message with retry button -->
+          <StackLayout v-else-if="error" class="error-container">
+            <Label class="error-message" :text="error" textWrap="true" />
+            <Button text="Réessayer" @tap="loadBarberDetails" class="retry-button" />
+          </StackLayout>
           
-          <StackLayout v-if="!loading && !error">
+          <StackLayout v-else>
             <!-- Barber profile header -->
             <StackLayout class="barber-header">
-              <Image :src="getBarbierImage()" width="140" height="140" class="barber-pic-h"  stretch="aspectFill" />
+              <Image :src="getBarbierImage()" width="140" height="140" class="barber-pic-h" stretch="aspectFill" />
               <Label :text="barbier ? barbier.nom : ''" class="barber-name" />
               <StackLayout class="stars-container">
                 <Label text="★★★★★" class="rating-stars" />
@@ -31,7 +33,7 @@
             <!-- Services section -->
             <StackLayout class="section-container">
               <Label text="Services proposés" class="section-title" />
-              <StackLayout class="services-list">
+              <StackLayout class="services-list" v-if="!servicesLoading">
                 <GridLayout v-for="service in services" :key="service.id" 
                             columns="auto, *, auto" rows="auto, auto" class="service-item" @tap="selectionnerService(service)">
                   <StackLayout col="0" row="0" rowSpan="2" class="check-container" v-if="service.selected" horizontalAlignment="center" verticalAlignment="center">
@@ -41,10 +43,18 @@
                   <Label :text="service.duree + ' minutes'" class="service-duration" col="1" row="1" />
                   <Label :text="service.prix + ' DA'" class="service-price" col="2" row="0" rowSpan="2" verticalAlignment="center" />
                 </GridLayout>
+                
+                <!-- Services loading error with retry button -->
+                <StackLayout v-if="servicesError" class="services-error">
+                  <Label :text="servicesError" class="error-message" textWrap="true" />
+                  <Button text="Réessayer" @tap="loadServices" class="retry-button" />
+                </StackLayout>
               </StackLayout>
+              
+              <!-- Services loading indicator -->
+              <ActivityIndicator v-if="servicesLoading" busy="true" color="#ffcd50" class="loading-indicator" />
             </StackLayout>
 
-            
             <!-- Available dates section -->
             <StackLayout class="section-container">
               <Label text="Dates disponibles" class="section-title" />
@@ -60,7 +70,6 @@
                 </StackLayout>
               </ScrollView>
             </StackLayout>
-          
             
             <!-- Available schedules section -->
             <StackLayout class="section-container">
@@ -70,7 +79,13 @@
               <Label v-if="!selectedService" text="Veuillez d'abord sélectionner un service" class="no-selection-text" />
               
               <!-- Loading indicator -->
-              <ActivityIndicator v-else-if="timeSlotLoading" busy="true" color="#ffcd50" />
+              <ActivityIndicator v-else-if="timeSlotLoading" busy="true" color="#ffcd50" class="loading-indicator" />
+              
+              <!-- Time slot error with retry button -->
+              <StackLayout v-else-if="timeSlotError" class="time-slot-error">
+                <Label :text="timeSlotError" class="error-message" textWrap="true" />
+                <Button text="Réessayer" @tap="checkAndFilterTimeSlots" class="retry-button" />
+              </StackLayout>
               
               <!-- No available slots message -->
               <Label v-else-if="horaires.length === 0" text="Aucun créneau disponible pour la date et le service sélectionnés. Veuillez essayer une autre date." class="no-selection-text" textWrap="true" />
@@ -85,7 +100,6 @@
                 </StackLayout>
               </GridLayout>
             </StackLayout>
-            
             
             <!-- Voucher section -->
             <StackLayout class="section-container">
@@ -102,7 +116,7 @@
       <!-- Sticky Footer -->
       <GridLayout row="2" class="sticky-footer">
         <!-- Book Button -->
-        <Button text="Réserver" @tap="reserver" class="book-button" />
+        <Button text="Réserver" @tap="reserver" class="book-button" :isEnabled="canBook" />
       </GridLayout>
       
       <!-- Bottom sheet modal -->
@@ -145,9 +159,8 @@
     </GridLayout>
   </Page>
 </template>
-  
+
 <script>
-// Complete script for DetailsBarbier.vue
 import { barbierService, rendezVousService, authService } from '../services/api';
 import { generateAvailableDates, generateTimeSlots, formatDate, formatDisplayTime } from '../utils/helpers';
 import { confirm, alert } from '@nativescript/core/ui/dialogs';
@@ -170,13 +183,16 @@ export default {
       selectedHoraire: null,
       loading: true,
       error: null,
+      servicesLoading: true,
+      servicesError: null,
       userInfo: null,
       showConfirmationModal: false,
       confirming: false,
       confirmationError: '',
       appointmentDate: null,
       timeSlotLoading: false,
-      reservedTimeSlots: [] // New property to store reserved time slots
+      timeSlotError: null,
+      reservedTimeSlots: []
     };
   },
   computed: {
@@ -208,6 +224,26 @@ export default {
       
       try {
         this.barbier = await barbierService.getBarberById(this.barbierId);
+        
+        // Initialize dates
+        this.dates = generateAvailableDates();
+        this.selectedDate = this.dates.find(date => date.selected);
+        
+        // Load services after barber is loaded
+        this.loadServices();
+      } catch (error) {
+        console.error('Error loading barber details:', error);
+        this.error = 'Unable to load barber details. Please try again.';
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    async loadServices() {
+      this.servicesLoading = true;
+      this.servicesError = null;
+      
+      try {
         const barberServices = await barbierService.getBarberServices(this.barbierId);
         
         // Map services to our format
@@ -215,16 +251,11 @@ export default {
           ...service,
           selected: false
         }));
-        
-        // Initialize dates
-        this.dates = generateAvailableDates();
-        this.selectedDate = this.dates.find(date => date.selected);
-        
       } catch (error) {
-        console.error('Error loading barber details:', error);
-        this.error = 'Error loading barber details';
+        console.error('Error loading services:', error);
+        this.servicesError = 'Unable to load services. Please try again.';
       } finally {
-        this.loading = false;
+        this.servicesLoading = false;
       }
     },
     
@@ -236,6 +267,7 @@ export default {
       // Reset the horaires array and selected horaire
       this.horaires = [];
       this.selectedHoraire = null;
+      this.timeSlotError = null;
       
       if (!this.selectedService || !this.selectedDate || !this.barbier) {
         console.log('Missing required data for time slot filtering');
@@ -247,16 +279,13 @@ export default {
       try {
         // Get all possible time slots for the day
         const allPossibleSlots = generateTimeSlots();
-        console.log(`Generated ${allPossibleSlots.length} possible time slots`);
         
         // Get the selected date
         const selectedDate = new Date(this.selectedDate.date);
         const formattedDate = selectedDate.toISOString();
-        console.log(`Checking availability for date: ${formattedDate}`);
         
         // Get the service duration
         const serviceDuration = this.selectedService.duree;
-        console.log(`Service duration: ${serviceDuration} minutes`);
         
         // Get availability data from API
         const availabilityData = await rendezVousService.checkAvailability(
@@ -270,11 +299,6 @@ export default {
           end: new Date(slot.endTime),
           serviceName: slot.serviceName
         }));
-        
-        console.log(`Found ${this.reservedTimeSlots.length} reserved time slots:`);
-        this.reservedTimeSlots.forEach(slot => {
-          console.log(`- ${slot.serviceName}: ${slot.start.toLocaleTimeString()} to ${slot.end.toLocaleTimeString()}`);
-        });
         
         // Filter slots based on conflicts
         const availableSlots = [];
@@ -293,7 +317,6 @@ export default {
           businessEnd.setHours(18, 0, 0, 0);
           
           if (slotEnd > businessEnd) {
-            console.log(`Slot ${slot.heure} extends past business hours, skipping`);
             continue;
           }
           
@@ -307,14 +330,12 @@ export default {
               (slotEnd > reserved.start && slotEnd <= reserved.end) || // Slot ends during reserved time
               (slotStart <= reserved.start && slotEnd >= reserved.end) // Slot contains reserved time
             ) {
-              console.log(`Conflict: Slot ${slot.heure} conflicts with reserved time ${reserved.start.toLocaleTimeString()} - ${reserved.end.toLocaleTimeString()}`);
               hasConflict = true;
               break;
             }
           }
           
           if (!hasConflict) {
-            console.log(`Slot ${slot.heure} is available`);
             availableSlots.push({
               id: slot.id,
               heure: slot.heure,
@@ -325,9 +346,9 @@ export default {
         
         // Update the horaires array with available slots
         this.horaires = availableSlots;
-        console.log(`Set ${this.horaires.length} available time slots`);
       } catch (error) {
         console.error('Error filtering time slots:', error);
+        this.timeSlotError = 'Unable to load available time slots. Please try again.';
         this.horaires = []; // On error, show no slots
       } finally {
         this.timeSlotLoading = false;
@@ -342,10 +363,11 @@ export default {
       // Reset time slot selection when service changes
       this.horaires = [];
       this.selectedHoraire = null;
+      this.timeSlotError = null;
       
       // If we have a date selected, check available time slots
       if (this.selectedDate) {
-        this.checkAndFilterTimeSlots(); // Use our new function instead
+        this.checkAndFilterTimeSlots();
       }
     },
     
@@ -353,6 +375,7 @@ export default {
       // Clear previous time selection
       this.horaires = [];
       this.selectedHoraire = null;
+      this.timeSlotError = null;
       
       // Set new date selection
       this.dates.forEach(d => d.selected = false);
@@ -361,7 +384,7 @@ export default {
       
       // If we have a service selected, check available time slots
       if (this.selectedService) {
-        this.checkAndFilterTimeSlots(); // Use our new function instead
+        this.checkAndFilterTimeSlots();
       }
     },
     
@@ -374,7 +397,7 @@ export default {
     getBarbierImage() {
       // Fallback to default image if photoUrl is missing or invalid
       if (!this.barbier || !this.barbier.photoUrl || this.barbier.photoUrl.includes('imgur')) {
-        return `~/assets/images/barber-${this.barbierId}.jpg`;
+        return `~/assets/images/barber-${this.barbierId % 3 + 1}.jpg`;
       }
       return this.barbier.photoUrl;
     },
@@ -466,7 +489,7 @@ export default {
   }
 };
 </script>
-  
+
 <style scoped>
 .header {
   background-color: #000000;
@@ -821,7 +844,13 @@ export default {
   margin: 0 15;
 }
 
+.services-error, .time-slot-error {
+  padding: 15;
+  justify-content: center;
+  align-items: center;
+}
+
 .loading-indicator {
-  margin: 20;
+  margin: 20 0;
 }
 </style>

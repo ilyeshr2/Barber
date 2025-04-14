@@ -31,7 +31,27 @@
     methods: {
       goToPage(page) {
         if (page === this.currentPage) return;
-        this.$navigateTo(require(`../views/${page}`).default);
+        
+        try {
+          const view = require(`../views/${page}`).default;
+          if (view) {
+            this.$navigateTo(view);
+          } else {
+            console.error(`View ${page} not found`);
+            this.$alert({
+              title: "Erreur",
+              message: "Cette fonctionnalité n'est pas encore disponible",
+              okButtonText: "OK"
+            });
+          }
+        } catch (error) {
+          console.error(`Error navigating to ${page}:`, error);
+          this.$alert({
+            title: "Erreur",
+            message: "Cette fonctionnalité n'est pas encore disponible",
+            okButtonText: "OK"
+          });
+        }
       }
     }
   };

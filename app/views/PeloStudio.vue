@@ -1,18 +1,17 @@
-<!-- app/views/PeloStudio.vue (Updated) -->
 <template>
   <Page actionBarHidden="true">
     <GridLayout rows="auto, *, auto">
       <!-- En-tête -->
       <GridLayout columns="auto, *, auto" class="header" row="0">
         <Image :src="userAvatar" class="user-avatar" col="0" />
-        <Image src="~/assets/images/yaniso-logo.png" class="app-icon" col="2" />
+        <Image :src="salonLogo" class="app-icon" col="2" />
       </GridLayout>
       
       <!-- Contenu principal (feed) -->
       <GridLayout row="1" rows="auto, *">
         <!-- Message de bienvenue -->
         <StackLayout row="0" class="welcome-container">
-          <Label text="Yaniso Studio" class="welcome-title" />
+          <Label :text="salonName" class="welcome-title" />
           <Label :text="'Bonjour, ' + userName" class="welcome-text" />
           <Button text="Donnez-nous votre avis" class="review-button" />
         </StackLayout>
@@ -21,12 +20,12 @@
         <ScrollView row="1">
           <StackLayout class="feed-container">
             <!-- Loading indicator -->
-            <ActivityIndicator v-if="loading" busy="true" color="#ffcd50" class="loading-indicator" />
+            <ActivityIndicator v-if="loading" busy="true" :color="config.COLORS.PRIMARY" class="loading-indicator" />
             
             <!-- Error message -->
             <Label v-if="error" class="error-message" :text="error" textWrap="true" />
             
-            <!-- Publications statiques pour cette version -->
+            <!-- Publications -->
             <StackLayout v-if="!loading && !error" class="post-container" v-for="(post, index) in publications" :key="index">
               <Image :src="post.imageUrl" class="post-image" stretch="aspectFill" />
               
@@ -38,7 +37,7 @@
                 <StackLayout v-if="post.title || post.description" class="post-description">
                   <Label v-if="post.title" :text="post.title" class="post-title" />
                   <Label v-if="post.description" :text="post.description" class="post-text" textWrap="true" />
-                  <Label v-if="post.seeMore" text="voir plus" class="see-more" />
+                  <Label v-if="post.description && post.description.length > 100" text="voir plus" class="see-more" />
                 </StackLayout>
                 
                 <GridLayout columns="auto, *, auto" class="post-author">
@@ -63,8 +62,9 @@
 </template>
 
 <script>
-import { authService } from '../services/api';
+import { authService, publicationService, salonService } from '../services/api';
 import NavigationBar from '../components/NavigationBar';
+import config from '../utils/config';
 
 export default {
   components: {
@@ -72,50 +72,14 @@ export default {
   },
   data() {
     return {
-      userAvatar: '~/assets/images/user-avatar.png',
-      publications: [
-        {
-          imageUrl: '~/assets/images/post1.png',
-          reactions: '😘😘',
-          authorName: 'Mahmoud',
-          authorImage: '~/assets/images/mahmoud.jpg',
-          date: '09 Jan',
-          description: '',
-          liked: false
-        },
-        {
-          imageUrl: '~/assets/images/post2.png',
-          reactions: '💈 🔥',
-          authorName: 'Islem',
-          authorImage: '~/assets/images/islem.jpg',
-          date: '08 Jan',
-          description: '',
-          liked: false
-        },
-        {
-          imageUrl: '~/assets/images/post3.png',
-          title: 'Naps nous rend visite',
-          description: 'Une journée extraordinaire chez Yaniso Studio ! 🎤 ✨ Nous avons eu l\'honneur d\'accueillir le talentueux rappeur Naps dans notre salon. Une expérience unique...',
-          authorName: 'Yaniso Rkik',
-          authorImage: '~/assets/images/rafik.jpg',
-          date: '16 Dec',
-          reactions: '',
-          seeMore: true,
-          liked: false
-        },
-        {
-          imageUrl: '~/assets/images/post4.png',
-          authorName: 'Yaniso Rkik',
-          authorImage: '~/assets/images/rafik.jpg',
-          date: '26 Aug',
-          description: 'Une journée inoubliable avec notre artiste dans notre studio ! ✨ Nous avons eu le plaisir d accueillir cette star pour une séance exclusive. Son style unique et sa personnalité rayonnante ont créé une ambiance exceptionnelle. Merci pour ces moments de créativité partagés ! #MomentPrivilégié #RencontreExceptionnelle ✂️...',
-          seeMore: true,
-          liked: false
-        }
-      ],
+      userAvatar: config.PLACEHOLDER_IMAGES.USER,
+      salonLogo: "~/assets/images/yaniso-logo.png",
+      salonName: "Yaniso Studio",
+      publications: [],
       userInfo: null,
-      loading: false,
-      error: null
+      loading: true,
+      error: null,
+      config: config
     };
   },
   computed: {
@@ -129,6 +93,8 @@ export default {
   },
   mounted() {
     this.refreshUserInfo();
+    this.loadPublications();
+    this.loadSalonInfo();
     
     // Set up event handler for page navigation
     const page = this.$el.nativeView;
@@ -144,18 +110,81 @@ export default {
     }
   },
   methods: {
+    async loadPublications() {
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        // Fetch posts from the server
+        this.publications = await publicationService.getAllPublications();
+      } catch (error) {
+        console.error('Error loading publications:', error);
+        this.error = 'Could not load feed. Please check your internet connection and try again.';
+        
+        // Fallback to static content if API fails
+        this.publications = [
+          {
+            id: 1,
+            imageUrl: '~/assets/images/post1.png',
+            reactions: '😘😘',
+            authorName: 'Mahmoud',
+            authorImage: '~/assets/images/mahmoud.jpg',
+            date: '09 Jan',
+            description: '',
+            liked: false
+          },
+          {
+            id: 2,
+            imageUrl: '~/assets/images/post2.png',
+            reactions: '💈 🔥',
+            authorName: 'Islem',
+            authorImage: '~/assets/images/islem.jpg',
+            date: '08 Jan',
+            description: '',
+            liked: false
+          }
+        ];
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    async loadSalonInfo() {
+      try {
+        const salon = await salonService.getSalonInfo();
+        if (salon) {
+          this.salonName = salon.name;
+          if (salon.logo_url) {
+            this.salonLogo = salon.logo_url;
+          }
+        }
+      } catch (error) {
+        console.error('Error loading salon info:', error);
+        // Keep default values if the API fails
+      }
+    },
+    
     likePost(index) {
       this.publications[index].liked = !this.publications[index].liked;
+      
+      // Send like to server if post has an ID
+      if (this.publications[index].id) {
+        publicationService.likePublication(this.publications[index].id)
+          .catch(err => console.error('Error liking post:', err));
+      }
     },
+    
     refreshUserInfo() {
       this.userInfo = authService.getUser();
     },
+    
     onNavigatedTo() {
       this.refreshUserInfo();
     }
   }
-};
+};;
 </script>
+
 
 <style scoped>
 .header {

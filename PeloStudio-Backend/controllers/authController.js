@@ -1,133 +1,174 @@
 // controllers/authController.js
+
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { Utilisateur } = require('../models');
+const { User } = require('../models');
 
-// Inscription d'un nouvel utilisateur
+// Sign up a new user
 exports.signup = async (req, res) => {
   try {
-    const { nom, prenom, dateNaissance, genre, telephone, email, motDePasse } = req.body;
+    const { email, telephone, password, firstName, lastName, dateOfBirth, gender } = req.body;
     
-    // Vérifier si l'utilisateur existe déjà
-    const existingUser = await Utilisateur.findOne({ where: { telephone } });
-    if (existingUser) {
-      return res.status(400).json({ message: 'Ce numéro de téléphone est déjà utilisé' });
-    }
-    
-    // Hasher le mot de passe
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(motDePasse, salt);
-    
-    // Créer l'utilisateur
-    const newUser = await Utilisateur.create({
-      nom,
-      prenom,
-      dateNaissance,
-      genre,
-      telephone,
-      email,
-      motDePasse: hashedPassword
+    // Check if user already exists
+    const existingUser = await User.findOne({ 
+      where: {
+        telephone
+      }
     });
     
-    // Générer un token JWT
+    if (existingUser) {
+      return res.status(400).json({ message: 'User with this phone number already exists' });
+    }
+    
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    
+    // Create user
+    const newUser = await User.create({
+      email,
+      telephone,
+      password_hash: hashedPassword,
+      role: 'customer',
+      first_name: firstName,
+      last_name: lastName,
+      date_of_birth: dateOfBirth,
+      gender
+    });
+    
+    // Generate JWT token
     const token = jwt.sign(
-      { id: newUser.id },
+      { id: newUser.id, role: newUser.role },
       process.env.JWT_SECRET,
       { expiresIn: '30d' }
     );
     
+    // Return user info without password
     res.status(201).json({
       id: newUser.id,
-      nom: newUser.nom,
-      prenom: newUser.prenom,
+      email: newUser.email,
+      telephone: newUser.telephone,
+      firstName: newUser.first_name,
+      lastName: newUser.last_name,
+      role: newUser.role,
       token
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Erreur lors de l\'inscription' });
+    console.error('Signup error:', error);
+    res.status(500).json({ message: 'Server error during signup' });
   }
 };
 
-// Connexion d'un utilisateur
+// Login a user
 exports.login = async (req, res) => {
   try {
-    const { telephone, motDePasse } = req.body;
+    const { email, telephone, password } = req.body;
     
-    // Vérifier si l'utilisateur existe
-    const user = await Utilisateur.findOne({ where: { telephone } });
+    // Find user by email or telephone
+    let whereClause = {};
+    if (email) {
+      whereClause.email = email;
+    } else if (telephone) {
+      whereClause.telephone = telephone;
+    } else {
+      return res.status(400).json({ message: 'Email or telephone is required' });
+    }
+    
+    const user = await User.findOne({ where: whereClause });
     if (!user) {
-      return res.status(401).json({ message: 'Téléphone ou mot de passe incorrect' });
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
     
-    // Vérifier le mot de passe
-    const isMatch = await bcrypt.compare(motDePasse, user.motDePasse);
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Téléphone ou mot de passe incorrect' });
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
     
-    // Générer un token JWT
+    // Generate JWT token
     const token = jwt.sign(
-      { id: user.id },
+      { id: user.id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '30d' }
     );
+    
+    // Return user info without password
+    res.status(200).json({
+      id: user.id,
+      email: user.email,
+      telephone: user.telephone,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      role: user.role,
+      token
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error during login' });
+  }
+};
+
+// Get current user profile
+exports.getProfile = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.userId, {
+      attributes: { exclude: ['password_hash'] }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
     
     res.status(200).json({
       id: user.id,
-      nom: user.nom,
-      prenom: user.prenom,
-      token
+      email: user.email,
+      telephone: user.telephone,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      dateOfBirth: user.date_of_birth,
+      gender: user.gender,
+      photoUrl: user.photo_url,
+      role: user.role
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Erreur lors de la connexion' });
+    console.error('Get profile error:', error);
+    res.status(500).json({ message: 'Server error fetching profile' });
   }
 };
 
-// Obtenir le profil de l'utilisateur connecté
-exports.getProfile = async (req, res) => {
+// Update user profile
+exports.updateProfile = async (req, res) => {
   try {
-    const user = await Utilisateur.findByPk(req.userId, {
-      attributes: { exclude: ['motDePasse'] }
-    });
+    const { firstName, lastName, dateOfBirth, gender, email } = req.body;
     
+    const user = await User.findByPk(req.userId);
     if (!user) {
-      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+      return res.status(404).json({ message: 'User not found' });
     }
     
-    res.status(200).json(user);
+    // Update fields
+    if (firstName) user.first_name = firstName;
+    if (lastName) user.last_name = lastName;
+    if (dateOfBirth) user.date_of_birth = dateOfBirth;
+    if (gender) user.gender = gender;
+    if (email) user.email = email;
+    
+    await user.save();
+    
+    // Return updated user
+    res.status(200).json({
+      id: user.id,
+      email: user.email,
+      telephone: user.telephone,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      dateOfBirth: user.date_of_birth,
+      gender: user.gender,
+      photoUrl: user.photo_url,
+      role: user.role
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Erreur serveur' });
+    console.error('Update profile error:', error);
+    res.status(500).json({ message: 'Server error updating profile' });
   }
 };
-exports.updateProfile = async (req, res) => {
-    try {
-      const { nom, prenom, dateNaissance, genre, email } = req.body;
-      
-      const user = await Utilisateur.findByPk(req.userId);
-      
-      if (!user) {
-        return res.status(404).json({ message: 'Utilisateur non trouvé' });
-      }
-      
-      // Update user information
-      if (nom) user.nom = nom;
-      if (prenom) user.prenom = prenom;
-      if (dateNaissance) user.dateNaissance = dateNaissance;
-      if (genre) user.genre = genre;
-      if (email) user.email = email;
-      
-      await user.save();
-      
-      // Return updated user without password
-      const updatedUser = await Utilisateur.findByPk(req.userId, {
-        attributes: { exclude: ['motDePasse'] }
-      });
-      
-      res.status(200).json(updatedUser);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Erreur serveur' });
-    }
-  };

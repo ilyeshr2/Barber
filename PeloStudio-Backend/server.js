@@ -2,107 +2,209 @@
 
 const express = require('express');
 const cors = require('cors');
-const { sequelize } = require('./models');
+const db = require('./models');
 const routes = require('./routes');
-
+const adminRoutes = require('./adminRoutes');
+const path = require('path');
+const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Create uploads directory for file storage
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  
+  // Create subdirectories for different types of uploads
+  fs.mkdirSync(path.join(uploadsDir, 'barbers'), { recursive: true });
+  fs.mkdirSync(path.join(uploadsDir, 'salon'), { recursive: true });
+  fs.mkdirSync(path.join(uploadsDir, 'publications'), { recursive: true });
+  fs.mkdirSync(path.join(uploadsDir, 'users'), { recursive: true });
+}
+
+// CORS configuration
+app.use(cors({
+  origin: '*', // In production, specify your exact domains
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Middleware
-app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api', routes);
+app.use('/api/admin', adminRoutes);
 
-// Database initial seed
-// In server.js
-const seedDatabase = async () => {
-    try {
-      // Log current data in database
-      const barbersCount = await sequelize.models.Barbier.count();
-      console.log(`Current barbers in database: ${barbersCount}`);
-      
-      const servicesCount = await sequelize.models.Service.count();
-      console.log(`Current services in database: ${servicesCount}`);
-      
-      // If there are no services, add them
-      if (servicesCount === 0) {
-        console.log('No services found. Adding services to database...');
-        
-        // First check if barbers exist
-        let barbers = await sequelize.models.Barbier.findAll();
-        
-        // If no barbers exist, create them
-        if (barbers.length === 0) {
-          console.log('No barbers found. Creating barbers first...');
-          
-          barbers = await sequelize.models.Barbier.bulkCreate([
-            {
-              nom: 'Yaniso Rekik',
-              photoUrl: 'https://i.imgur.com/1234.jpg',
-              note: 5.0,
-              nombreAvis: 8,
-              salonId: 1
-            },
-            {
-              nom: 'Islem',
-              photoUrl: 'https://i.imgur.com/5678.jpg',
-              note: 5.0,
-              nombreAvis: 5,
-              salonId: 1
-            }
-          ]);
-          
-          console.log(`Created ${barbers.length} barbers`);
-        }
-        
-        // Now we know barbers exist, create services for them
-        const rafik = barbers[0];
-        const islem = barbers.length > 1 ? barbers[1] : barbers[0];
-        
-        console.log(`Creating services for barber: ${rafik.nom} (ID: ${rafik.id})`);
-        
-        // Create services for Rafik
-        const rafikServices = await sequelize.models.Service.bulkCreate([
-          { nom: 'Haircut', duree: 20, prix: 500, BarberId: rafik.id },
-          { nom: 'Beard', duree: 20, prix: 200, BarberId: rafik.id },
-          { nom: 'Proteins', duree: 60, prix: 8000, BarberId: rafik.id },
-          { nom: 'Wax', duree: 15, prix: 300, BarberId: rafik.id },
-          { nom: 'Tracing', duree: 10, prix: 100, BarberId: rafik.id }
-        ]);
-        
-        console.log(`Creating services for barber: ${islem.nom} (ID: ${islem.id})`);
-        
-        // Create services for Islem
-        const islemServices = await sequelize.models.Service.bulkCreate([
-          { nom: 'Haircut', duree: 20, prix: 500, BarberId: islem.id },
-          { nom: 'Beard', duree: 20, prix: 200, BarberId: islem.id },
-          { nom: 'Coloring', duree: 45, prix: 1200, BarberId: islem.id }
-        ]);
-        
-        console.log(`Created ${rafikServices.length + islemServices.length} services`);
-        console.log('Database seeded successfully');
-      }
-    } catch (error) {
-      console.error('Error seeding database:', error);
-    }
-  };
 // Start server
 app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   
   try {
-    await sequelize.authenticate();
+    // First, authenticate the database connection
+    await db.sequelize.authenticate();
     console.log('Database connection established');
     
-    // Sync database models
-    await sequelize.sync();
+    // Sync without force (only create tables if they don't exist)
+    await db.sequelize.sync({ force: false });
     console.log('Database synchronized');
     
-    // Seed database with initial data
-    await seedDatabase();
+    // Only seed if the SEED_DB environment variable is set
+    if (process.env.SEED_DB === 'true') {
+      console.log('Seeding database...');
+      await seedDatabase();
+      console.log('Database seeding completed');
+    }
+    
+    console.log('Server initialization complete');
   } catch (error) {
-    console.error('Database connection error:', error);
+    console.error('Server initialization error:', error);
+    process.exit(1); // Exit if we can't initialize properly
   }
 });
+
+// Database initial seed
+const seedDatabase = async () => {
+  try {
+    // Check if salon already exists
+    const salonCount = await db.Salon.count();
+    if (salonCount > 0) {
+      console.log('Salon already exists, skipping seed');
+      return;
+    }
+    
+    // 1. First create the salon as it's required by other entities
+    const salon = await db.Salon.create({
+      name: 'Yaniso Studio',
+      address: 'Rue Jean-Talon E, Montréal',
+      phone: '+1 438-686-6697',
+      email: 'contact@yanisostudio.com',
+      description: 'Yaniso Studio est votre barbier de confiance à Montréal.',
+      logo_url: '/uploads/salon/default-logo.png',
+      image_url: '/uploads/salon/default-salon.jpg'
+    });
+    console.log('Default salon created');
+
+    // 2. Create business hours
+    const defaultHours = [
+      { day_of_week: 0, is_open: false, open_time: '09:00', close_time: '18:00' },
+      { day_of_week: 1, is_open: true, open_time: '09:00', close_time: '18:00' },
+      { day_of_week: 2, is_open: true, open_time: '09:00', close_time: '18:00' },
+      { day_of_week: 3, is_open: true, open_time: '09:00', close_time: '18:00' },
+      { day_of_week: 4, is_open: true, open_time: '09:00', close_time: '18:00' },
+      { day_of_week: 5, is_open: true, open_time: '09:00', close_time: '18:00' },
+      { day_of_week: 6, is_open: true, open_time: '10:00', close_time: '17:00' }
+    ];
+    
+    await Promise.all(defaultHours.map(hour => 
+      db.BusinessHours.create({
+        ...hour,
+        salon_id: salon.id
+      })
+    ));
+    console.log('Business hours created');
+
+    // 3. Create social links
+    const defaultSocialLinks = [
+      { platform: 'facebook', url: 'https://www.facebook.com/yanisostudio' },
+      { platform: 'instagram', url: 'https://www.instagram.com/yanisostudio' },
+      { platform: 'tiktok', url: 'https://www.tiktok.com/@yanisostudio' }
+    ];
+    
+    await Promise.all(defaultSocialLinks.map(link => 
+      db.SocialLinks.create({
+        ...link,
+        salon_id: salon.id
+      })
+    ));
+    console.log('Social links created');
+
+    // 4. Create admin user
+    const bcrypt = require('bcrypt');
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash('admin123', salt);
+    
+    await db.User.create({
+      email: 'admin@yanisostudio.com',
+      telephone: '+15555555555',
+      password_hash: hashedPassword,
+      role: 'admin',
+      first_name: 'Admin',
+      last_name: 'User',
+      date_of_birth: '1990-01-01',
+      gender: 'Homme'
+    });
+    console.log('Admin user created');
+
+    // 5. Create barbers
+    const barbers = await db.Barber.bulkCreate([
+      {
+        name: 'Yaniso Rekik',
+        photo_url: '/uploads/barbers/default-barber-1.jpg',
+        rating: 5.0,
+        review_count: 8,
+        salon_id: salon.id,
+        is_active: true
+      },
+      {
+        name: 'Islem',
+        photo_url: '/uploads/barbers/default-barber-2.jpg',
+        rating: 5.0,
+        review_count: 5,
+        salon_id: salon.id,
+        is_active: true
+      }
+    ]);
+    console.log('Barbers created');
+
+    // 6. Create services for each barber
+    const servicesData = [
+      // For Yaniso
+      { name: 'Coupe', duration: 20, price: 500, barber_id: barbers[0].id, is_active: true },
+      { name: 'Barbe', duration: 20, price: 200, barber_id: barbers[0].id, is_active: true },
+      { name: 'Protéines', duration: 60, price: 8000, barber_id: barbers[0].id, is_active: true },
+      { name: 'Cire', duration: 15, price: 300, barber_id: barbers[0].id, is_active: true },
+      { name: 'Traçage', duration: 10, price: 100, barber_id: barbers[0].id, is_active: true },
+      
+      // For Islem
+      { name: 'Coupe', duration: 20, price: 500, barber_id: barbers[1].id, is_active: true },
+      { name: 'Barbe', duration: 20, price: 200, barber_id: barbers[1].id, is_active: true },
+      { name: 'Coloration', duration: 45, price: 1200, barber_id: barbers[1].id, is_active: true }
+    ];
+    
+    await db.Service.bulkCreate(servicesData);
+    console.log('Services created');
+
+    // 7. Create publications
+    await db.Publication.bulkCreate([
+      {
+        title: '',
+        description: '',
+        image_url: '/uploads/publications/post1.png',
+        reactions: '😘😘',
+        author_name: 'Mahmoud',
+        author_image: '/uploads/publications/mahmoud.jpg',
+        likes: 24
+      },
+      {
+        title: '',
+        description: '',
+        image_url: '/uploads/publications/post2.png',
+        reactions: '💈 🔥',
+        author_name: 'Islem',
+        author_image: '/uploads/publications/islem.jpg',
+        likes: 18
+      }
+    ]);
+    console.log('Publications created');
+
+    console.log('Database seeding completed successfully');
+  } catch (error) {
+    console.error('Error seeding database:', error);
+    throw error; // Re-throw to be caught by the server initialization
+  }
+};

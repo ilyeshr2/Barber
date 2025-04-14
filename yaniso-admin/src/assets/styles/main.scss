@@ -1,0 +1,29 @@
+/* Custom styling */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  /* Using Font Awesome classes as placeholders - you can replace these with actual icons
+     or create your own custom CSS classes for icons */
+  .bi-plus::before { content: "+"; }
+  .bi-pencil::before { content: "✏️"; }
+  .bi-trash::before { content: "🗑️"; }
+  .bi-eye::before { content: "👁️"; }
+  .bi-arrow-left::before { content: "←"; }
+  .bi-arrow-right::before { content: "→"; }
+  .bi-search::before { content: "🔍"; }
+  .bi-chevron-left::before { content: "<"; }
+  .bi-chevron-right::before { content: ">"; }
+  .bi-info-circle::before { content: "ℹ️"; }
+  .bi-star-fill::before { content: "★"; }
+  .bi-check-circle::before { content: "✓"; }
+  .bi-x-circle::before { content: "✗"; }
+  .bi-house-door::before { content: "🏠"; }
+  .bi-calendar2-check::before { content: "📅"; }
+  .bi-scissors::before { content: "✂️"; }
+  .bi-people::before { content: "👥"; }
+  .bi-calendar-check::before { content: "📆"; }
+  .bi-person-badge::before { content: "👤"; }
+  .bi-speedometer2::before { content: "🏁"; }
+  .bi-graph-up::before { content: "📈"; }
+  .bi-calendar-plus::before { content: "📅+"; }

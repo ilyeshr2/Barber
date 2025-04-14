@@ -1,8 +1,8 @@
-// app/services/api.js
 import * as http from "@nativescript/core/http";
 import * as ApplicationSettings from "@nativescript/core/application-settings";
+import config from "../utils/config";
 
-const API_URL = "http://10.0.2.2:3000/api";
+const API_URL = config.API_URL;
 
 // Function to get token from storage
 const getToken = () => {
@@ -33,7 +33,7 @@ const getUserInfo = () => {
   return userJson ? JSON.parse(userJson) : null;
 };
 
-// HTTP requests with error handling
+// HTTP requests with improved error handling
 const fetchApi = async (endpoint, options = {}) => {
   try {
     const token = getToken();
@@ -49,7 +49,8 @@ const fetchApi = async (endpoint, options = {}) => {
     const requestOptions = {
       url: `${API_URL}/${endpoint}`,
       method: options.method || "GET",
-      headers: headers
+      headers: headers,
+      timeout: 10000 // 10 seconds timeout
     };
     
     if (options.body) {
@@ -74,11 +75,35 @@ const fetchApi = async (endpoint, options = {}) => {
     
     // Check if response is successful
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      // Handle specific status codes
+      if (response.statusCode === 401) {
+        // Unauthorized - clear auth data
+        saveToken(null);
+        saveUserInfo(null);
+        throw new Error('Your session has expired. Please log in again.');
+      } else if (response.statusCode === 403) {
+        throw new Error('You do not have permission to perform this action.');
+      } else if (response.statusCode === 404) {
+        throw new Error('The requested resource was not found.');
+      } else if (response.statusCode === 422) {
+        throw new Error(data.message || 'Validation error. Please check your inputs.');
+      } else if (response.statusCode >= 500) {
+        throw new Error('Server error. Please try again later.');
+      }
+      
       throw new Error(data.message || "Une erreur est survenue");
     }
     
     return data;
   } catch (error) {
+    // Handle connection errors
+    if (error.toString().includes('Failed to fetch') || 
+        error.toString().includes('Network request failed') ||
+        error.toString().includes('timeout')) {
+      console.error(`Network error (${endpoint}):`, error);
+      throw new Error('Network connection error. Please check your internet connection and try again.');
+    }
+    
     console.error(`API Error (${endpoint}):`, error);
     throw error;
   }
@@ -88,17 +113,28 @@ const fetchApi = async (endpoint, options = {}) => {
 export const authService = {
   signup: async (userData) => {
     try {
+      // Format the data according to the new API structure
+      const formattedData = {
+        firstName: userData.prenom,
+        lastName: userData.nom,
+        dateOfBirth: userData.dateNaissance,
+        gender: userData.genre,
+        telephone: userData.telephone,
+        email: userData.email,
+        password: userData.motDePasse
+      };
+      
       const data = await fetchApi("auth/signup", {
         method: "POST",
-        body: userData
+        body: formattedData
       });
       
       if (data.token) {
         saveToken(data.token);
         saveUserInfo({
           id: data.id,
-          nom: data.nom,
-          prenom: data.prenom,
+          nom: data.lastName,
+          prenom: data.firstName,
           telephone: userData.telephone // Save the telephone from signup data
         });
       }
@@ -111,17 +147,23 @@ export const authService = {
   
   login: async (credentials) => {
     try {
+      // Format credentials according to the new API structure
+      const formattedCredentials = {
+        telephone: credentials.telephone,
+        password: credentials.motDePasse
+      };
+      
       const data = await fetchApi("auth/login", {
         method: "POST",
-        body: credentials
+        body: formattedCredentials
       });
       
       if (data.token) {
         saveToken(data.token);
         saveUserInfo({
           id: data.id,
-          nom: data.nom,
-          prenom: data.prenom,
+          nom: data.lastName,
+          prenom: data.firstName,
           telephone: credentials.telephone // Save the telephone from login credentials
         });
       }
@@ -141,9 +183,11 @@ export const authService = {
         const currentUser = getUserInfo() || {};
         const updatedUser = { 
           ...currentUser,
-          ...data,
-          // Make sure telephone is preserved if it's not in the profile
-          telephone: data.telephone || currentUser.telephone 
+          id: data.id,
+          nom: data.lastName,
+          prenom: data.firstName,
+          email: data.email,
+          telephone: data.telephone || currentUser.telephone
         };
         saveUserInfo(updatedUser);
         return updatedUser;
@@ -168,15 +212,25 @@ export const authService = {
   
   updateProfile: async (userData) => {
     try {
+      // Format data according to the new API structure
+      const formattedData = {
+        firstName: userData.prenom,
+        lastName: userData.nom,
+        dateOfBirth: userData.dateNaissance,
+        gender: userData.genre,
+        email: userData.email
+      };
+      
       const data = await fetchApi("auth/profile", {
         method: "PUT",
-        body: userData
+        body: formattedData
       });
       
       // Update the stored user info with the response
       const userInfoToUpdate = {
-        nom: data.nom,
-        prenom: data.prenom,
+        nom: data.lastName,
+        prenom: data.firstName,
+        email: data.email,
         telephone: data.telephone || userData.telephone // Preserve telephone
       };
       authService.updateUserInfo(userInfoToUpdate);
@@ -187,7 +241,7 @@ export const authService = {
       authService.updateUserInfo({
         nom: userData.nom,
         prenom: userData.prenom,
-        telephone: userData.telephone // Preserve telephone
+        telephone: userData.telephone
       });
       throw new Error('Profile updated locally, but server update failed. Changes may not persist after logout.');
     }
@@ -211,7 +265,15 @@ export const authService = {
 export const barbierService = {
   getAllBarbers: async () => {
     try {
-      return await fetchApi("barbers");
+      const barbers = await fetchApi("barbers");
+      // Transform barber data to match the format expected by the app
+      return barbers.map(barber => ({
+        id: barber.id,
+        nom: barber.name,
+        photoUrl: barber.photo_url,
+        note: barber.rating,
+        nombreAvis: barber.review_count
+      }));
     } catch (error) {
       console.error('Error fetching barbers:', error);
       throw new Error('Failed to load barbers. Please try again later.');
@@ -220,7 +282,15 @@ export const barbierService = {
   
   getBarberById: async (id) => {
     try {
-      return await fetchApi(`barbers/${id}`);
+      const barber = await fetchApi(`barbers/${id}`);
+      // Transform barber data to match the format expected by the app
+      return {
+        id: barber.id,
+        nom: barber.name,
+        photoUrl: barber.photo_url,
+        note: barber.rating,
+        nombreAvis: barber.review_count
+      };
     } catch (error) {
       console.error(`Error fetching barber ${id}:`, error);
       throw new Error('Failed to load barber details. Please try again later.');
@@ -229,7 +299,15 @@ export const barbierService = {
   
   getBarberServices: async (id) => {
     try {
-      return await fetchApi(`barbers/${id}/services`);
+      const services = await fetchApi(`barbers/${id}/services`);
+      // Transform service data to match the format expected by the app
+      return services.map(service => ({
+        id: service.id,
+        nom: service.name,
+        duree: service.duration,
+        prix: service.price,
+        BarberId: service.barber_id
+      }));
     } catch (error) {
       console.error(`Error fetching services for barber ${id}:`, error);
       throw new Error('Failed to load barber services. Please try again later.');
@@ -241,7 +319,30 @@ export const barbierService = {
 export const rendezVousService = {
   getUserAppointments: async () => {
     try {
-      return await fetchApi("appointments");
+      const appointments = await fetchApi("appointments");
+      // Transform appointment data to match the format expected by the app
+      return appointments.map(appointment => ({
+        id: appointment.id,
+        date: appointment.appointment_date,
+        statut: appointment.status,
+        UtilisateurId: appointment.user_id,
+        BarbierId: appointment.barber_id,
+        ServiceId: appointment.service_id,
+        createdAt: appointment.created_at,
+        updatedAt: appointment.updated_at,
+        // Include related models if available in response
+        Barbier: appointment.Barber ? {
+          id: appointment.Barber.id,
+          nom: appointment.Barber.name,
+          photoUrl: appointment.Barber.photo_url
+        } : null,
+        Service: appointment.Service ? {
+          id: appointment.Service.id,
+          nom: appointment.Service.name,
+          duree: appointment.Service.duration,
+          prix: appointment.Service.price
+        } : null
+      }));
     } catch (error) {
       console.error('Error fetching appointments:', error);
       throw new Error('Failed to load appointments. Please try again later.');
@@ -250,10 +351,41 @@ export const rendezVousService = {
   
   createAppointment: async (appointmentData) => {
     try {
-      return await fetchApi("appointments", {
+      // Format data according to the new API structure
+      const formattedData = {
+        barber_id: appointmentData.barbierId,
+        service_id: appointmentData.serviceId,
+        appointment_date: appointmentData.date
+      };
+      
+      const appointment = await fetchApi("appointments", {
         method: "POST",
-        body: appointmentData
+        body: formattedData
       });
+      
+      // Transform to the format expected by the app
+      return {
+        id: appointment.id,
+        date: appointment.appointment_date,
+        statut: appointment.status,
+        UtilisateurId: appointment.user_id,
+        BarbierId: appointment.barber_id,
+        ServiceId: appointment.service_id,
+        createdAt: appointment.created_at,
+        updatedAt: appointment.updated_at,
+        // Include related models if available in response
+        Barbier: appointment.Barber ? {
+          id: appointment.Barber.id,
+          nom: appointment.Barber.name,
+          photoUrl: appointment.Barber.photo_url
+        } : null,
+        Service: appointment.Service ? {
+          id: appointment.Service.id,
+          nom: appointment.Service.name,
+          duree: appointment.Service.duration,
+          prix: appointment.Service.price
+        } : null
+      };
     } catch (error) {
       console.error('Error creating appointment:', error);
       if (error.message.includes('déjà réservé') || error.message.includes('already booked')) {
@@ -265,16 +397,17 @@ export const rendezVousService = {
   
   cancelAppointment: async (id) => {
     try {
-      return await fetchApi(`appointments/${id}/cancel`, {
+      const result = await fetchApi(`appointments/${id}/cancel`, {
         method: "PUT"
       });
+      return result;
     } catch (error) {
       console.error('Error cancelling appointment:', error);
       throw new Error('Failed to cancel appointment. Please try again later.');
     }
   },
   
-  // New function to check availability of a time slot
+  // Check availability of a time slot
   checkAvailability: async (barbierId, date) => {
     try {
       // Convert date to ISO string for API
@@ -303,9 +436,78 @@ export const refreshUserInfo = async () => {
   }
 };
 
+// Salon service to get salon information
+export const salonService = {
+  getSalonInfo: async () => {
+    try {
+      const salon = await fetchApi("salon");
+      return salon;
+    } catch (error) {
+      console.error('Error fetching salon info:', error);
+      throw new Error('Failed to load salon information. Please try again later.');
+    }
+  }
+};
+
+// Publications service to get feed posts
+export const publicationService = {
+  getAllPublications: async () => {
+    try {
+      const publications = await fetchApi("publications");
+      // Transform to match the expected format in the app
+      return publications.map(pub => ({
+        id: pub.id,
+        title: pub.title,
+        description: pub.description,
+        imageUrl: pub.image_url,
+        reactions: pub.reactions,
+        authorName: pub.author_name,
+        authorImage: pub.author_image,
+        date: new Date(pub.created_at).toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: '2-digit' 
+        }),
+        likes: pub.likes,
+        liked: false // Client-side state
+      }));
+    } catch (error) {
+      console.error('Error fetching publications:', error);
+      throw new Error('Failed to load feed. Please try again later.');
+    }
+  },
+  
+  likePublication: async (id) => {
+    try {
+      const result = await fetchApi(`publications/${id}/like`, {
+        method: "POST"
+      });
+      return result;
+    } catch (error) {
+      console.error('Error liking publication:', error);
+      throw new Error('Failed to like publication. Please try again later.');
+    }
+  }
+};
+
+// App settings service
+export const settingsService = {
+  refreshSettings: async () => {
+    try {
+      await config.refreshSettings();
+      return true;
+    } catch (error) {
+      console.error('Error refreshing settings:', error);
+      return false;
+    }
+  }
+};
+
 export default {
   authService,
   barbierService,
   rendezVousService,
+  salonService,
+  publicationService,
+  settingsService,
   refreshUserInfo
 };

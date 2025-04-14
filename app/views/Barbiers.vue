@@ -1,11 +1,13 @@
-<!-- app/views/Barbiers.vue (Updated) -->
+
+<!-- app/views/Barbiers.vue (Updated for Dynamic Data) -->
 <template>
   <Page actionBarHidden="true">
     <GridLayout rows="auto, *, auto">
       <!-- Header -->
       <GridLayout row="0" columns="auto, *, auto" class="header">
-        <Image src="~/assets/images/user-avatar.png" class="user-avatar" col="0" />
-        <Image src="~/assets/images/yaniso-logo.png" class="app-logo" col="2" />
+        <Image :src="userInfo && userInfo.photoUrl ? userInfo.photoUrl : '~/assets/images/user-avatar.png'" class="user-avatar" col="0" />
+        <Label text="" col="1" />
+        <Image :src="salonLogo" class="app-logo" col="2" />
       </GridLayout>
 
       <!-- Main content area -->
@@ -15,25 +17,28 @@
           <StackLayout class="welcome-section">
             <Label text="Barbiers" class="page-title" col="1" />
             <Label :text="'Bonjour, ' + userName" class="welcome-text" />
-            <Button text="Donnez-nous votre avis" class="review-button" />
+            <Button text="Donnez-nous votre avis" class="review-button" @tap="giveReview" />
           </StackLayout>
 
-          <!-- Salon info -->
-          <GridLayout columns="auto, *" class="salon-info">
+          <!-- Salon info - now dynamic -->
+          <GridLayout columns="auto, *" class="salon-info" @tap="showSalonDetails">
             <StackLayout class="store-box">
               <Image src="~/assets/images/shop-icon.png" class="salon-icon" col="0" />
             </StackLayout>
-            <Label text="Rue Jean-Talon E, Montréal" class="salon-name" col="1" />
+            <Label :text="salonAddress" class="salon-name" col="1" />
           </GridLayout>
 
           <!-- Loading indicator -->
-          <ActivityIndicator v-if="loading" busy="true" color="#FFCC33" />
+          <ActivityIndicator v-if="loading" busy="true" color="#FFCC33" class="loading-indicator" />
 
-          <!-- Error message -->
-          <Label v-if="error" class="error-message" :text="error" textWrap="true" />
+          <!-- Error message with retry button -->
+          <StackLayout v-else-if="error" class="error-container">
+            <Label class="error-message" :text="error" textWrap="true" />
+            <Button text="Réessayer" @tap="loadBarbers" class="retry-button" />
+          </StackLayout>
 
           <!-- Barbers list -->
-          <StackLayout v-if="!loading && !error" class="barbers-list">
+          <StackLayout v-else class="barbers-list">
             <StackLayout v-for="barbier in barbiers" :key="barbier.id" class="barber-card" @tap="voirDetailsBarbier(barbier)">
               <GridLayout rows="*">
                 <Image :src="getBarbierImage(barbier)" class="barber-image" stretch="aspectFill" />
@@ -44,7 +49,7 @@
                       <Label text="Barbier" class="barber-title" />
                     </StackLayout>
                     <GridLayout col="1" columns="auto, auto" class="rating-container">
-                      <Label :text="barbier.note.toFixed(1)" class="rating-value" col="0" />
+                      <Label :text="(barbier.note !== null && barbier.note !== undefined) ? barbier.note.toFixed(1) : '0.0'" class="rating-value" col="0" />
                       <Label text="★" class="rating-star" col="1" />
                     </GridLayout>
                   </GridLayout>
@@ -74,7 +79,10 @@ export default {
       barbiers: [],
       loading: true,
       error: null,
-      userInfo: null
+      userInfo: null,
+      salonInfo: {},
+      salonLogo: "~/assets/images/yaniso-logo.png",
+      salonAddress: "Rue Jean-Talon E, Montréal"
     };
   },
   computed: {
@@ -83,11 +91,12 @@ export default {
         return this.userInfo.prenom;
       }
       const user = authService.getUser();
-      return user ? user.prenom : 'Citric acid';
+      return user ? user.prenom : 'Visiteur';
     }
   },
   mounted() {
     this.loadBarbers();
+    this.loadSalonInfo();
     this.refreshUserInfo();
 
     // Set up event handler for page navigation
@@ -112,9 +121,30 @@ export default {
         this.barbiers = await barbierService.getAllBarbers();
       } catch (error) {
         console.error('Error loading barbers:', error);
-        this.error = 'Error loading barbers';
+        this.error = 'Unable to load barbers. Please check your connection and try again.';
       } finally {
         this.loading = false;
+      }
+    },
+
+    async loadSalonInfo() {
+      try {
+        // If you've implemented the salonService as suggested in the previous code
+        if (typeof salonService !== 'undefined') {
+          const salon = await salonService.getSalonInfo();
+          if (salon) {
+            this.salonInfo = salon;
+            if (salon.address) {
+              this.salonAddress = salon.address;
+            }
+            if (salon.logo_url) {
+              this.salonLogo = salon.logo_url;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading salon info:', error);
+        // Keep default values if the API fails
       }
     },
 
@@ -127,7 +157,7 @@ export default {
     getBarbierImage(barbier) {
       // Fallback to default image if photoUrl is missing or invalid
       if (!barbier.photoUrl || barbier.photoUrl.includes('imgur')) {
-        return `~/assets/images/barber-${barbier.id}.jpg`;
+        return `~/assets/images/barber-${barbier.id % 3 + 1}.jpg`;
       }
       return barbier.photoUrl;
     },
@@ -138,11 +168,27 @@ export default {
 
     onNavigatedTo() {
       this.refreshUserInfo();
+    },
+
+    giveReview() {
+      // Implement the review functionality
+      alert("Cette fonctionnalité sera disponible prochainement!");
+    },
+
+    showSalonDetails() {
+      // Navigate to salon details page if it exists
+      try {
+        this.$navigateTo(require('./SalonDetails').default, {
+          props: { salonInfo: this.salonInfo }
+        });
+      } catch (error) {
+        console.error('SalonDetails view not found:', error);
+        alert("Cette fonctionnalité sera disponible prochainement!");
+      }
     }
   }
 };
 </script>
-
 <style scoped>
 /* Header styles */
 .header {

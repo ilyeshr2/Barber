@@ -1,5 +1,5 @@
 <!-- app/views/Rendez-vous.vue (Updated) -->
-<template>
+vueCopy<template>
   <Page actionBarHidden="true">
     <GridLayout rows="auto, auto, *, auto">
       <!-- En-tête -->
@@ -29,8 +29,11 @@
           <!-- Loading indicator -->
           <ActivityIndicator v-else-if="loading" busy="true" color="#FFCC33" />
 
-          <!-- Error message -->
-          <Label v-else-if="error" class="error-message" :text="error" textWrap="true" />
+          <!-- Error message with retry button -->
+          <StackLayout v-else-if="error" class="error-container">
+            <Label class="error-message" :text="error" textWrap="true" />
+            <Button text="Réessayer" @tap="loadAppointments" class="retry-button" />
+          </StackLayout>
 
           <!-- Liste des rendez-vous -->
           <StackLayout v-else>
@@ -88,7 +91,7 @@
 <script>
 import { rendezVousService, authService } from '../services/api';
 import { formatAppointmentDate, formatDisplayTime } from '../utils/helpers';
-import { confirm } from '@nativescript/core/ui/dialogs';
+import { confirm, alert } from '@nativescript/core/ui/dialogs';
 import NavigationBar from '../components/NavigationBar';
 
 export default {
@@ -101,7 +104,8 @@ export default {
       loading: true,
       error: null,
       userAvatar: '~/assets/images/user-avatar.png',
-      userInfo: null
+      userInfo: null,
+      cancellingId: null, // Track which appointment is currently being cancelled
     };
   },
   computed: {
@@ -150,7 +154,7 @@ export default {
         this.rendezVous.sort((a, b) => new Date(a.date) - new Date(b.date));
       } catch (error) {
         console.error('Error loading appointments:', error);
-        this.error = 'Error loading appointments';
+        this.error = 'Unable to load your appointments. Please try again.';
       } finally {
         this.loading = false;
       }
@@ -203,13 +207,27 @@ export default {
 
       if (result) {
         try {
+          this.cancellingId = id;
           await rendezVousService.cancelAppointment(id);
+          
+          // Show success message
+          await alert({
+            title: "Appointment Cancelled",
+            message: "Your appointment has been successfully cancelled.",
+            okButtonText: "OK"
+          });
 
           // Reload appointments
           this.loadAppointments();
         } catch (error) {
           console.error('Error cancelling appointment:', error);
-          this.error = 'Error cancelling appointment';
+          alert({
+            title: "Error",
+            message: "Failed to cancel appointment. Please try again.",
+            okButtonText: "OK"
+          });
+        } finally {
+          this.cancellingId = null;
         }
       }
     },
@@ -412,5 +430,20 @@ export default {
 
 .loading-indicator {
   margin: 50;
+}
+.error-container {
+  padding: 20;
+  justify-content: center;
+  align-items: center;
+}
+
+
+.retry-button {
+  background-color: #ffcd50;
+  color: #000000;
+  font-size: 16;
+  border-radius: 20;
+  height: 40;
+  width: 150;
 }
 </style>
