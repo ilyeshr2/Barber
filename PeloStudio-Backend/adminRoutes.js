@@ -1,8 +1,30 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+const path = require('path');
+
+// Configure Multer for file uploads
+const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, 'temp-uploads/');
+  },
+  filename: function(req, file, cb) {
+    cb(null, `temp-${Date.now()}-${path.basename(file.originalname)}`);
+  }
+});
+
+// Create the temp uploads directory if it doesn't exist
+const fs = require('fs');
+if (!fs.existsSync('temp-uploads/')) {
+  fs.mkdirSync('temp-uploads/', { recursive: true });
+}
+
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // limit to 5MB
+  }
+});
 
 // Import controllers
 const adminAuthController = require('./controllers/admin/authController');
@@ -13,13 +35,22 @@ const adminClientsController = require('./controllers/admin/clientsController');
 const adminSalonController = require('./controllers/admin/salonController');
 const adminPublicationsController = require('./controllers/admin/publicationsController');
 const adminSettingsController = require('./controllers/admin/settingsController');
+const adminMigrationController = require('./controllers/admin/migrationController');
 
 // Import middleware
 const { authenticateToken, isAdmin } = require('./middlewares/authMiddleware');
 
+// Import sub-routes
+const fileStorageRoutes = require('./routes/admin/fileStorageRoutes');
+const migrationRoutes = require('./routes/admin/migrationRoutes');
+
 // Apply both auth and admin middleware to all routes
 router.use(authenticateToken);
 router.use(isAdmin);
+
+// Use sub-routes
+router.use('/files', fileStorageRoutes);
+router.use('/migrations', migrationRoutes);
 
 // Admin Auth
 router.get('/profile', adminAuthController.getProfile);
@@ -78,5 +109,11 @@ router.delete('/publications/:id', adminPublicationsController.deletePublication
 // Settings management
 router.get('/settings', adminSettingsController.getAllSettings);
 router.put('/settings/:key', adminSettingsController.updateSetting);
+
+// Database migration routes (direct, without sub-routes)
+router.post('/migrate/run', adminMigrationController.runMigrations);
+router.post('/migrate/create', adminMigrationController.createMigration);
+router.post('/migrate/undo', adminMigrationController.undoMigration);
+router.get('/migrate/status', adminMigrationController.getMigrationStatus);
 
 module.exports = router;

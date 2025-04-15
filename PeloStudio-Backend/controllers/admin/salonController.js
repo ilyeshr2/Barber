@@ -1,83 +1,158 @@
-const { Salon } = require('../../models');
-const cloudinary = require('../../config/cloudinary');
+const { Salon, FileStorage } = require('../../models');
+const fs = require('fs');
+const path = require('path');
 
 exports.updateSalonInfo = async (req, res) => {
     try {
+        // Get request body data
         const { name, address, phone, email, description } = req.body;
+        
+        // Find existing salon or create a new one
         let salon = await Salon.findOne();
-
-        // If no salon info exists, create it
+        
         if (!salon) {
             salon = await Salon.create({
-                name,
-                address,
-                phone,
-                email,
-                description
+                name: name || 'Yaniso Studio',
+                address: address || 'Rue Jean-Talon E, Montréal',
+                phone: phone || '+1 438-686-6697',
+                email: email || 'contact@yanisostudio.com',
+                description: description || 'Yaniso Studio est votre barbier de confiance à Montréal.',
+                logo_url: '/uploads/salon/default-logo.png',
+                image_url: '/uploads/salon/default-salon.jpg'
             });
         } else {
-            // Update existing salon info
+            // Update text fields if provided
             if (name) salon.name = name;
             if (address) salon.address = address;
             if (phone) salon.phone = phone;
             if (email) salon.email = email;
             if (description) salon.description = description;
         }
-
+        
+        // Handle file uploads
+        const files = req.files || {};
+        
+        // Create uploads directory if it doesn't exist
+        const uploadDir = path.join(__dirname, '../../uploads/salon');
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        
         // Handle logo upload
-        if (req.files && req.files.logo) {
-            const result = await cloudinary.uploader.upload(req.files.logo[0].path);
-            salon.logo_url = result.secure_url;
+        if (files.logo && files.logo[0]) {
+            const logoFile = files.logo[0];
+            const logoFileName = `${Date.now()}-logo-${path.basename(logoFile.originalname)}`;
+            const logoFilePath = path.join(uploadDir, logoFileName);
+            
+            // Move file from temp location to salon directory
+            fs.renameSync(logoFile.path, logoFilePath);
+            
+            // Store file metadata in database
+            const logoFileData = await FileStorage.create({
+                original_name: logoFile.originalname,
+                file_path: `/uploads/salon/${logoFileName}`,
+                file_size: logoFile.size,
+                mime_type: logoFile.mimetype,
+                category: 'salon',
+                upload_date: new Date()
+            });
+            
+            // Delete old logo if it's not the default
+            if (salon.logo_url && !salon.logo_url.includes('default-logo') && fs.existsSync(path.join(__dirname, '../../', salon.logo_url))) {
+                fs.unlinkSync(path.join(__dirname, '../../', salon.logo_url));
+            }
+            
+            salon.logo_url = logoFileData.file_path;
         }
-
-        // Handle salon image upload
-        if (req.files && req.files.image) {
-            const result = await cloudinary.uploader.upload(req.files.image[0].path);
-            salon.image_url = result.secure_url;
+        
+        // Handle image upload
+        if (files.image && files.image[0]) {
+            const imageFile = files.image[0];
+            const imageFileName = `${Date.now()}-image-${path.basename(imageFile.originalname)}`;
+            const imageFilePath = path.join(uploadDir, imageFileName);
+            
+            // Move file from temp location to salon directory
+            fs.renameSync(imageFile.path, imageFilePath);
+            
+            // Store file metadata in database
+            const imageFileData = await FileStorage.create({
+                original_name: imageFile.originalname,
+                file_path: `/uploads/salon/${imageFileName}`,
+                file_size: imageFile.size,
+                mime_type: imageFile.mimetype,
+                category: 'salon',
+                upload_date: new Date()
+            });
+            
+            // Delete old image if it's not the default
+            if (salon.image_url && !salon.image_url.includes('default-salon') && fs.existsSync(path.join(__dirname, '../../', salon.image_url))) {
+                fs.unlinkSync(path.join(__dirname, '../../', salon.image_url));
+            }
+            
+            salon.image_url = imageFileData.file_path;
         }
-
+        
+        // Save the updated salon information
         await salon.save();
-        res.json(salon);
+        
+        res.status(200).json(salon);
     } catch (error) {
-        console.error('Error in updateSalonInfo:', error);
-        res.status(500).json({ message: 'Server error' });
+        console.error('Error updating salon info:', error);
+        
+        // Clean up uploaded files if there was an error
+        if (req.files) {
+            Object.values(req.files).flat().forEach(file => {
+                if (fs.existsSync(file.path)) {
+                    fs.unlinkSync(file.path);
+                }
+            });
+        }
+        
+        res.status(500).json({ message: 'Server error while updating salon information' });
     }
 };
 
 exports.updateBusinessHours = async (req, res) => {
     try {
-        const { businessHours } = req.body;
-        let salon = await Salon.findOne();
-
-        if (!salon) {
-            return res.status(404).json({ message: 'Salon information not found' });
-        }
-
+        // Get business hours from request body
+        const { business_hours } = req.body;
+        
         // Validate business hours format
-        if (!Array.isArray(businessHours) || businessHours.length !== 7) {
+        if (!business_hours || !Array.isArray(business_hours) || business_hours.length !== 7) {
             return res.status(400).json({ 
-                message: 'Business hours must be an array with 7 days' 
+                message: 'Invalid business hours format. Must be an array of 7 days with day_of_week, is_open, open_time, and close_time'
             });
         }
-
-        // Validate each day's format
-        const isValidHours = businessHours.every(day => {
-            return day.isOpen !== undefined &&
-                   (!day.isOpen || (day.openTime && day.closeTime));
-        });
-
-        if (!isValidHours) {
-            return res.status(400).json({ 
-                message: 'Invalid business hours format' 
-            });
+        
+        // Validate each day's data
+        for (const day of business_hours) {
+            if (
+                typeof day.day_of_week !== 'number' || 
+                day.day_of_week < 0 || 
+                day.day_of_week > 6 ||
+                typeof day.is_open !== 'boolean' ||
+                typeof day.open_time !== 'string' ||
+                typeof day.close_time !== 'string'
+            ) {
+                return res.status(400).json({ 
+                    message: 'Invalid day format. Each day must have day_of_week (0-6), is_open (boolean), open_time (string), and close_time (string)'
+                });
+            }
         }
-
-        salon.businessHours = businessHours;
+        
+        // Find existing salon
+        const salon = await Salon.findOne();
+        if (!salon) {
+            return res.status(404).json({ message: 'Salon not found' });
+        }
+        
+        // Update business hours
+        salon.business_hours = business_hours;
         await salon.save();
         
-        res.json(salon);
+        res.status(200).json({ business_hours: salon.business_hours });
     } catch (error) {
-        console.error('Error in updateBusinessHours:', error);
-        res.status(500).json({ message: 'Server error' });
+        console.error('Error updating business hours:', error);
+        res.status(500).json({ message: 'Server error while updating business hours' });
     }
 }; 

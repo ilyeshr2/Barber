@@ -1,7 +1,7 @@
-const { Barber, Service, Appointment } = require('../../models');
+const { Barber, Service, Appointment, FileStorage } = require('../../models');
 const { Op } = require('sequelize');
-const cloudinary = require('../../config/cloudinary');
 const fs = require('fs');
+const path = require('path');
 
 exports.getAllBarbers = async (req, res) => {
     try {
@@ -47,18 +47,34 @@ exports.createBarber = async (req, res) => {
             return res.status(400).json({ message: 'Name is required' });
         }
         
-        let photoUrl = '/images/default-barber.jpg'; // Default image
+        let photoUrl = '/uploads/barbers/default-barber.jpg'; // Default image
         
-        // Upload image to cloudinary if provided
+        // Upload image to local storage if provided
         if (req.file) {
-            const result = await cloudinary.uploader.upload(req.file.path, {
-                folder: 'barbers'
+            // Create uploads directory if it doesn't exist
+            const uploadDir = path.join(__dirname, '../../uploads/barbers');
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+            
+            // Generate unique filename
+            const fileName = `${Date.now()}-${path.basename(req.file.originalname)}`;
+            const filePath = path.join(uploadDir, fileName);
+            
+            // Move file from temp location to barbers directory
+            fs.renameSync(req.file.path, filePath);
+            
+            // Store file metadata in database
+            const fileData = await FileStorage.create({
+                original_name: req.file.originalname,
+                file_path: `/uploads/barbers/${fileName}`,
+                file_size: req.file.size,
+                mime_type: req.file.mimetype,
+                category: 'barbers',
+                upload_date: new Date()
             });
             
-            photoUrl = result.secure_url;
-            
-            // Remove the temporary file
-            fs.unlinkSync(req.file.path);
+            photoUrl = fileData.file_path;
         }
         
         const barber = await Barber.create({
@@ -95,21 +111,35 @@ exports.updateBarber = async (req, res) => {
         
         // Handle photo update if file is provided
         if (req.file) {
-            // If there's an existing photo that's not the default, delete it from cloudinary
-            if (barber.photo_url && barber.photo_url.includes('cloudinary')) {
-                const publicId = barber.photo_url.split('/').pop().split('.')[0];
-                await cloudinary.uploader.destroy(`barbers/${publicId}`);
+            // Create uploads directory if it doesn't exist
+            const uploadDir = path.join(__dirname, '../../uploads/barbers');
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
             }
             
-            // Upload new photo
-            const result = await cloudinary.uploader.upload(req.file.path, {
-                folder: 'barbers'
+            // Generate unique filename
+            const fileName = `${Date.now()}-${path.basename(req.file.originalname)}`;
+            const filePath = path.join(uploadDir, fileName);
+            
+            // Move file from temp location to barbers directory
+            fs.renameSync(req.file.path, filePath);
+            
+            // Store file metadata in database
+            const fileData = await FileStorage.create({
+                original_name: req.file.originalname,
+                file_path: `/uploads/barbers/${fileName}`,
+                file_size: req.file.size,
+                mime_type: req.file.mimetype,
+                category: 'barbers',
+                upload_date: new Date()
             });
             
-            barber.photo_url = result.secure_url;
+            // Delete old photo file if it's not the default
+            if (barber.photo_url && !barber.photo_url.includes('default-barber') && fs.existsSync(path.join(__dirname, '../../', barber.photo_url))) {
+                fs.unlinkSync(path.join(__dirname, '../../', barber.photo_url));
+            }
             
-            // Remove the temporary file
-            fs.unlinkSync(req.file.path);
+            barber.photo_url = fileData.file_path;
         }
         
         // Update other fields if provided
@@ -159,10 +189,12 @@ exports.deleteBarber = async (req, res) => {
             });
         }
         
-        // Delete photo from cloudinary if it's not the default
-        if (barber.photo_url && barber.photo_url.includes('cloudinary')) {
-            const publicId = barber.photo_url.split('/').pop().split('.')[0];
-            await cloudinary.uploader.destroy(`barbers/${publicId}`);
+        // Delete photo file if it's not the default
+        if (barber.photo_url && !barber.photo_url.includes('default-barber')) {
+            const photoPath = path.join(__dirname, '../../', barber.photo_url);
+            if (fs.existsSync(photoPath)) {
+                fs.unlinkSync(photoPath);
+            }
         }
         
         await barber.destroy();

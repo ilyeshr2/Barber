@@ -350,6 +350,45 @@ const AppSetting = sequelize.define('AppSetting', {
   updatedAt: 'updated_at'
 });
 
+// Add FileStorage model
+const FileStorage = sequelize.define('FileStorage', {
+  id: {
+    type: Sequelize.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  original_name: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  file_path: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    unique: true
+  },
+  file_size: {
+    type: Sequelize.INTEGER,
+    allowNull: false
+  },
+  mime_type: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  category: {
+    type: Sequelize.ENUM('barbers', 'salon', 'publications', 'users', 'misc'),
+    defaultValue: 'misc'
+  },
+  upload_date: {
+    type: Sequelize.DATE,
+    defaultValue: Sequelize.NOW
+  }
+}, {
+  tableName: 'file_storage',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
+});
+
 // Define associations
 Salon.hasMany(BusinessHours, { foreignKey: 'salon_id' });
 BusinessHours.belongsTo(Salon, { foreignKey: 'salon_id' });
@@ -385,6 +424,7 @@ db.Service = Service;
 db.Appointment = Appointment;
 db.Publication = Publication;
 db.AppSetting = AppSetting;
+db.FileStorage = FileStorage;
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;

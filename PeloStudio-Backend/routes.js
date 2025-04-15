@@ -13,15 +13,6 @@ const salonController = require('./controllers/salonController');
 const publicationsController = require('./controllers/publicationController');
 const settingsController = require('./controllers/settingsController');
 
-// Import admin routes
-const adminAppointmentRoutes = require('./routes/admin/appointmentRoutes');
-const adminClientRoutes = require('./routes/admin/clientRoutes');
-const adminBarberRoutes = require('./routes/admin/barberRoutes');
-const adminServiceRoutes = require('./routes/admin/serviceRoutes');
-const adminSalonRoutes = require('./routes/admin/salonRoutes');
-const adminPublicationRoutes = require('./routes/admin/publicationRoutes');
-const adminSettingsRoutes = require('./routes/admin/settingsRoutes');
-
 // Import middleware
 const { authenticateToken } = require('./middlewares/authMiddleware');
 
@@ -44,14 +35,5 @@ router.get('/appointments', authenticateToken, appointmentsController.getUserApp
 router.post('/appointments', authenticateToken, appointmentsController.createAppointment);
 router.put('/appointments/:id/cancel', authenticateToken, appointmentsController.cancelAppointment);
 router.get('/appointments/check-availability', appointmentsController.checkAvailability);
-
-// Admin routes
-router.use('/admin/appointments', adminAppointmentRoutes);
-router.use('/admin/clients', adminClientRoutes);
-router.use('/admin/barbers', adminBarberRoutes);
-router.use('/admin/services', adminServiceRoutes);
-router.use('/admin/salon', adminSalonRoutes);
-router.use('/admin/publications', adminPublicationRoutes);
-router.use('/admin/settings', adminSettingsRoutes);
 
 module.exports = router;

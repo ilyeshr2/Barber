@@ -29,8 +29,28 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Serve uploaded files
+// Serve uploaded files - ensure the path is correct
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Add a route to get image details for debugging
+app.get('/api/debug/images/:path', (req, res) => {
+  const imagePath = req.params.path;
+  const fullPath = path.join(__dirname, 'uploads', imagePath);
+  
+  if (fs.existsSync(fullPath)) {
+    res.json({
+      exists: true,
+      path: fullPath,
+      size: fs.statSync(fullPath).size,
+      isFile: fs.statSync(fullPath).isFile()
+    });
+  } else {
+    res.json({
+      exists: false,
+      path: fullPath
+    });
+  }
+});
 
 // Middleware
 app.use(express.json());
