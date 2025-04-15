@@ -16,6 +16,7 @@ exports.getServicesByBarberId = async (req, res) => {
       duree: service.duration,
       prix: service.price,
       BarberId: service.barber_id,
+      isActive: service.is_active,
       createdAt: service.created_at,
       updatedAt: service.updated_at
     }));

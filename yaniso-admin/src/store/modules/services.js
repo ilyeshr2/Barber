@@ -98,6 +98,7 @@ export default {
       
       try {
         const services = await ServiceService.getServicesByBarbierId(barbierId)
+        console.log('Raw services data from API:', JSON.stringify(services))
         commit('SET_BARBIER_SERVICES', { barbierId, services })
         return services
       } catch (error) {

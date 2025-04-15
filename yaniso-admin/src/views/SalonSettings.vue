@@ -83,7 +83,7 @@
                 <div class="d-flex align-items-center">
                   <img 
                     v-if="salonForm.logoUrl" 
-                    :src="salonForm.logoUrl" 
+                    :src="displayLogoUrl" 
                     alt="Salon logo" 
                     class="me-3" 
                     style="height: 50px; width: auto;"
@@ -103,7 +103,7 @@
                 <div class="d-flex align-items-center mb-2">
                   <img 
                     v-if="salonForm.imageUrl" 
-                    :src="salonForm.imageUrl" 
+                    :src="displayImageUrl" 
                     alt="Salon image" 
                     class="me-3" 
                     style="height: 100px; width: auto;"
@@ -255,6 +255,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import Loader from '@/components/common/Loader.vue'
 import { notify } from '@/utils/notification'
+import { formatImageUrl } from '@/utils/imageHelpers'
 
 export default {
   name: 'SalonSettings',
@@ -314,8 +315,8 @@ export default {
           phone: salonData.phone || '',
           email: salonData.email || '',
           description: salonData.description || '',
-          logoUrl: salonData.logoUrl || '',
-          imageUrl: salonData.imageUrl || ''
+          logoUrl: salonData.logo_url || salonData.logoUrl || '',
+          imageUrl: salonData.image_url || salonData.imageUrl || ''
         }
         
         // Update business hours if available
@@ -340,6 +341,7 @@ export default {
       savingBasicInfo.value = true
       
       try {
+        console.log('Starting salon info update')
         // Create FormData for file uploads
         const formData = new FormData()
         formData.append('name', salonForm.value.name)
@@ -350,15 +352,19 @@ export default {
         
         // Add logo file if selected
         if (logoFile.value) {
+          console.log('Appending logo file to FormData:', logoFile.value.name)
           formData.append('logo', logoFile.value)
         }
         
         // Add image file if selected
         if (imageFile.value) {
+          console.log('Appending image file to FormData:', imageFile.value.name)
           formData.append('image', imageFile.value)
         }
         
-        await store.dispatch('salon/updateSalonInfo', formData)
+        console.log('Dispatching salon/updateSalonInfo action')
+        const result = await store.dispatch('salon/updateSalonInfo', formData)
+        console.log('Update completed successfully:', result)
         notify.success('Informations du salon mises à jour avec succès')
       } catch (error) {
         console.error('Error updating salon info:', error)
@@ -401,12 +407,14 @@ export default {
     const handleLogoUpload = (event) => {
       const file = event.target.files[0]
       if (file) {
+        console.log('Logo file selected:', file.name, file.type, file.size)
         logoFile.value = file
         
         // Create a preview
         const reader = new FileReader()
         reader.onload = (e) => {
           salonForm.value.logoUrl = e.target.result
+          console.log('Logo preview created')
         }
         reader.readAsDataURL(file)
       }
@@ -415,12 +423,14 @@ export default {
     const handleImageUpload = (event) => {
       const file = event.target.files[0]
       if (file) {
+        console.log('Cover image file selected:', file.name, file.type, file.size)
         imageFile.value = file
         
         // Create a preview
         const reader = new FileReader()
         reader.onload = (e) => {
           salonForm.value.imageUrl = e.target.result
+          console.log('Cover image preview created')
         }
         reader.readAsDataURL(file)
       }
@@ -430,6 +440,20 @@ export default {
       const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
       return days[dayNumber]
     }
+    
+    const displayLogoUrl = computed(() => {
+      if (salonForm.value.logoUrl) {
+        return formatImageUrl(salonForm.value.logoUrl)
+      }
+      return ''
+    })
+    
+    const displayImageUrl = computed(() => {
+      if (salonForm.value.imageUrl) {
+        return formatImageUrl(salonForm.value.imageUrl)
+      }
+      return ''
+    })
     
     return {
       salonForm,
@@ -446,7 +470,9 @@ export default {
       updateSocialLinks,
       handleLogoUpload,
       handleImageUpload,
-      getDayName
+      getDayName,
+      displayLogoUrl,
+      displayImageUrl
     }
   }
 }

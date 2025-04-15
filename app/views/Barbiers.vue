@@ -49,7 +49,7 @@
                       <Label text="Barbier" class="barber-title" />
                     </StackLayout>
                     <GridLayout col="1" columns="auto, auto" class="rating-container">
-                      <Label :text="(barbier.note !== null && barbier.note !== undefined) ? barbier.note.toFixed(1) : '0.0'" class="rating-value" col="0" />
+                      <Label :text="(barbier.note !== null && barbier.note !== undefined && !isNaN(Number(barbier.note))) ? Number(barbier.note).toFixed(1) : '0.0'" class="rating-value" col="0" />
                       <Label text="★" class="rating-star" col="1" />
                     </GridLayout>
                   </GridLayout>

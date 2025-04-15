@@ -30,7 +30,6 @@ export default {
       state.appointments = appointments
     },
     SET_TODAY_APPOINTMENTS(state, appointments) {
-      console.log('Setting today appointments in store:', appointments);
       state.todayAppointments = appointments
     },
     SET_UPCOMING_APPOINTMENTS(state, appointments) {
@@ -126,13 +125,11 @@ export default {
       
       try {
         const appointments = await AppointmentService.getTodayAppointments()
-        console.log('Appointments in store action:', appointments);
         
         // The service already maps the data, so we can directly use it
         commit('SET_TODAY_APPOINTMENTS', appointments)
         return appointments
       } catch (error) {
-        console.error('Error in fetchTodayAppointments action:', error);
         commit('SET_ERROR', error.message)
         throw error
       } finally {

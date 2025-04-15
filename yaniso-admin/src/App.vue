@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useStore } from 'vuex'
 import Navbar from './components/common/Navbar.vue'
 import Sidebar from './components/common/Sidebar.vue'
@@ -34,6 +34,16 @@ export default {
     onMounted(() => {
       store.dispatch('auth/checkAuth')
     })
+    
+    // Watch for authentication changes and load salon info when authenticated
+    watch(isAuthenticated, (newValue) => {
+      if (newValue) {
+        // Load salon info for global use
+        store.dispatch('salon/fetchSalonInfo').catch(error => {
+          console.error('Error loading salon info:', error)
+        })
+      }
+    }, { immediate: true })
     
     return {
       isAuthenticated

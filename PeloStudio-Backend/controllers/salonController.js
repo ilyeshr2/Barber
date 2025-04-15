@@ -71,12 +71,12 @@ exports.updateSalonInfo = async (req, res) => {
     
     // Handle logo upload if provided
     if (req.files && req.files.logo) {
-      salon.logoUrl = handleFileUpload(req.files.logo[0], 'salon');
+      salon.logo_url = handleFileUpload(req.files.logo[0], 'salon');
     }
     
     // Handle image upload if provided
     if (req.files && req.files.image) {
-      salon.imageUrl = handleFileUpload(req.files.image[0], 'salon');
+      salon.image_url = handleFileUpload(req.files.image[0], 'salon');
     }
     
     await salon.save();

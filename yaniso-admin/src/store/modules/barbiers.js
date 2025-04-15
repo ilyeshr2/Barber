@@ -3,12 +3,17 @@ import BarbierService from '@/services/barbier.service'
 
 // Helper function to normalize barber data from API
 const normalizeBarber = (barber) => {
+  // Ensure note/rating is a valid number
+  const rating = barber.rating || barber.note;
+  const numericRating = typeof rating === 'number' ? rating : 
+                         typeof rating === 'string' ? parseFloat(rating) : 5.0;
+                         
   // Map API fields to frontend field names if needed
   return {
     id: barber.id,
     nom: barber.name || barber.nom,
     photoUrl: barber.photo_url || barber.photoUrl,
-    note: barber.rating || barber.note || 5.0,
+    note: !isNaN(numericRating) ? numericRating : 5.0,
     nombreAvis: barber.review_count || barber.nombreAvis || 0,
     salonId: barber.salon_id || barber.salonId || 1,
     isActive: barber.is_active !== undefined ? barber.is_active : true

@@ -49,7 +49,7 @@
               <h4 class="card-title mb-0">{{ barbier ? barbier.nom : 'Unknown Barber' }}</h4>
               <div v-if="barbier">
                 <span class="badge bg-warning text-dark me-2">
-                  {{ (barbier.note !== null && barbier.note !== undefined) ? barbier.note.toFixed(1) : '0.0' }} <i class="bi bi-star-fill"></i>
+                  {{ barbier.note !== null && barbier.note !== undefined && !isNaN(Number(barbier.note)) ? Number(barbier.note).toFixed(1) : '0.0' }} <i class="bi bi-star-fill"></i>
                 </span>
                 <span class="text-muted">{{ barbier.nombreAvis }} reviews</span>
               </div>
@@ -203,9 +203,12 @@
       
       const loadBarbierServices = async () => {
         try {
-          await store.dispatch('services/fetchBarbierServices', barbierId.value)
+          console.log('Loading services for barber ID:', barbierId.value);
+          const result = await store.dispatch('services/fetchBarbierServices', barbierId.value);
+          console.log('Loaded services:', result);
+          console.log('Services in store:', store.getters['services/barbierServices'](barbierId.value));
         } catch (error) {
-          console.error('Error loading barber services:', error)
+          console.error('Error loading barber services:', error);
         }
       }
       

@@ -14,7 +14,22 @@ class ServiceService {
   async getServicesByBarberId(barberId) {
     try {
       const response = await api.get(`/barbers/${barberId}/services`);
-      return response.data;
+      console.log('Service API Response:', JSON.stringify(response.data));
+      
+      // Transform snake_case field names to the expected French names
+      const transformedServices = response.data.map(service => ({
+        id: service.id,
+        nom: service.name,
+        description: service.description,
+        duree: service.duration,
+        prix: service.price,
+        BarberId: service.barber_id,
+        isActive: service.is_active,
+        createdAt: service.created_at,
+        updatedAt: service.updated_at
+      }));
+      
+      return transformedServices;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch barber services');
     }

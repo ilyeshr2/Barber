@@ -33,7 +33,7 @@
                 
                 <div class="d-flex align-items-center mb-3">
                   <div class="me-3">
-                    <span class="fs-4 fw-bold text-warning">{{ (barbier.note !== null && barbier.note !== undefined) ? barbier.note.toFixed(1) : '0.0' }}</span>
+                    <span class="fs-4 fw-bold text-warning">{{ (barbier.note !== null && barbier.note !== undefined && !isNaN(Number(barbier.note))) ? Number(barbier.note).toFixed(1) : '0.0' }}</span>
                     <i class="bi bi-star-fill text-warning"></i>
                   </div>
                   <span class="text-muted">({{ barbier.nombreAvis }} reviews)</span>

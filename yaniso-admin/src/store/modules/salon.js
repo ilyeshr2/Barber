@@ -35,14 +35,14 @@ export default {
       commit('SET_ERROR', null)
       
       try {
-        const salonData = await SalonService.getSalonInfo()
-        commit('SET_SALON_INFO', salonData)
+        const salonInfo = await SalonService.getSalonInfo()
+        commit('SET_SALON_INFO', salonInfo)
         
-        if (salonData.businessHours) {
-          commit('SET_BUSINESS_HOURS', salonData.businessHours)
+        if (salonInfo.businessHours) {
+          commit('SET_BUSINESS_HOURS', salonInfo.businessHours)
         }
         
-        return salonData
+        return salonInfo
       } catch (error) {
         commit('SET_ERROR', error.message)
         throw error
@@ -51,15 +51,28 @@ export default {
       }
     },
     
-    async updateSalonInfo({ commit }, salonData) {
+    async updateSalonInfo({ commit, dispatch }, salonData) {
       commit('SET_LOADING', true)
       commit('SET_ERROR', null)
       
       try {
+        console.log('Salon store: updateSalonInfo action received data', salonData)
+        
         const updatedSalon = await SalonService.updateSalonInfo(salonData)
-        commit('SET_SALON_INFO', updatedSalon)
-        return updatedSalon
+        console.log('Salon store: received response from service:', updatedSalon)
+        
+        // Normalize field names if necessary
+        const normalizedSalon = {
+          ...updatedSalon,
+          logoUrl: updatedSalon.logo_url || updatedSalon.logoUrl,
+          imageUrl: updatedSalon.image_url || updatedSalon.imageUrl
+        }
+        
+        console.log('Salon store: normalized salon data:', normalizedSalon)
+        commit('SET_SALON_INFO', normalizedSalon)
+        return normalizedSalon
       } catch (error) {
+        console.error('Salon store: error in updateSalonInfo action:', error)
         commit('SET_ERROR', error.message)
         throw error
       } finally {
@@ -67,13 +80,16 @@ export default {
       }
     },
     
-    async updateBusinessHours({ commit }, hoursData) {
+    async updateBusinessHours({ commit, dispatch }, hoursData) {
       commit('SET_LOADING', true)
       commit('SET_ERROR', null)
       
       try {
         const updatedHours = await SalonService.updateBusinessHours(hoursData)
-        commit('SET_BUSINESS_HOURS', updatedHours)
+        
+        // Update business hours in state
+        await dispatch('fetchSalonInfo')
+        
         return updatedHours
       } catch (error) {
         commit('SET_ERROR', error.message)

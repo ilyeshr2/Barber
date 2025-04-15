@@ -34,7 +34,7 @@
               >
               <div class="position-absolute top-0 end-0 m-2">
                 <span class="badge bg-warning text-dark">
-                  {{ (barbier.note !== null && barbier.note !== undefined) ? barbier.note.toFixed(1) : '0.0' }} <i class="bi bi-star-fill"></i>
+                  {{ (barbier.note !== null && barbier.note !== undefined && !isNaN(Number(barbier.note))) ? Number(barbier.note).toFixed(1) : '0.0' }} <i class="bi bi-star-fill"></i>
                 </span>
               </div>
             </div>

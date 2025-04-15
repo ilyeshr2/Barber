@@ -1,101 +1,156 @@
-const { Salon, FileStorage } = require('../../models');
+const { Salon, FileStorage, sequelize } = require('../../models');
 const fs = require('fs');
 const path = require('path');
 
 exports.updateSalonInfo = async (req, res) => {
     try {
-        // Get request body data
-        const { name, address, phone, email, description } = req.body;
+        console.log('updateSalonInfo called with request body:', req.body);
+        console.log('Files received:', req.files);
         
-        // Find existing salon or create a new one
-        let salon = await Salon.findOne();
+        // Start a transaction to ensure data integrity
+        const transaction = await sequelize.transaction();
         
-        if (!salon) {
-            salon = await Salon.create({
-                name: name || 'Yaniso Studio',
-                address: address || 'Rue Jean-Talon E, Montréal',
-                phone: phone || '+1 438-686-6697',
-                email: email || 'contact@yanisostudio.com',
-                description: description || 'Yaniso Studio est votre barbier de confiance à Montréal.',
-                logo_url: '/uploads/salon/default-logo.png',
-                image_url: '/uploads/salon/default-salon.jpg'
-            });
-        } else {
-            // Update text fields if provided
-            if (name) salon.name = name;
-            if (address) salon.address = address;
-            if (phone) salon.phone = phone;
-            if (email) salon.email = email;
-            if (description) salon.description = description;
-        }
-        
-        // Handle file uploads
-        const files = req.files || {};
-        
-        // Create uploads directory if it doesn't exist
-        const uploadDir = path.join(__dirname, '../../uploads/salon');
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        
-        // Handle logo upload
-        if (files.logo && files.logo[0]) {
-            const logoFile = files.logo[0];
-            const logoFileName = `${Date.now()}-logo-${path.basename(logoFile.originalname)}`;
-            const logoFilePath = path.join(uploadDir, logoFileName);
+        try {
+            // Get request body data
+            const { name, address, phone, email, description } = req.body;
             
-            // Move file from temp location to salon directory
-            fs.renameSync(logoFile.path, logoFilePath);
+            // Find existing salon or create a new one
+            let salon = await Salon.findOne({ transaction });
+            console.log('Current salon data from DB:', salon ? salon.toJSON() : 'No salon found');
             
-            // Store file metadata in database
-            const logoFileData = await FileStorage.create({
-                original_name: logoFile.originalname,
-                file_path: `/uploads/salon/${logoFileName}`,
-                file_size: logoFile.size,
-                mime_type: logoFile.mimetype,
-                category: 'salon',
-                upload_date: new Date()
-            });
-            
-            // Delete old logo if it's not the default
-            if (salon.logo_url && !salon.logo_url.includes('default-logo') && fs.existsSync(path.join(__dirname, '../../', salon.logo_url))) {
-                fs.unlinkSync(path.join(__dirname, '../../', salon.logo_url));
+            if (!salon) {
+                salon = await Salon.create({
+                    name: name || 'Yaniso Studio',
+                    address: address || 'Rue Jean-Talon E, Montréal',
+                    phone: phone || '+1 438-686-6697',
+                    email: email || 'contact@yanisostudio.com',
+                    description: description || 'Yaniso Studio est votre barbier de confiance à Montréal.',
+                    logo_url: '/uploads/salon/default-logo.png',
+                    image_url: '/uploads/salon/default-salon.jpg'
+                }, { transaction });
+                console.log('Created new salon record:', salon.toJSON());
+            } else {
+                // Update text fields if provided
+                let updated = false;
+                if (name) { 
+                    salon.name = name; 
+                    updated = true;
+                }
+                if (address) { 
+                    salon.address = address; 
+                    updated = true;
+                }
+                if (phone) { 
+                    salon.phone = phone; 
+                    updated = true;
+                }
+                if (email) { 
+                    salon.email = email; 
+                    updated = true;
+                }
+                if (description) { 
+                    salon.description = description; 
+                    updated = true;
+                }
+                if (updated) {
+                    console.log('Text fields updated');
+                }
             }
             
-            salon.logo_url = logoFileData.file_path;
-        }
-        
-        // Handle image upload
-        if (files.image && files.image[0]) {
-            const imageFile = files.image[0];
-            const imageFileName = `${Date.now()}-image-${path.basename(imageFile.originalname)}`;
-            const imageFilePath = path.join(uploadDir, imageFileName);
+            // Handle file uploads
+            const files = req.files || {};
             
-            // Move file from temp location to salon directory
-            fs.renameSync(imageFile.path, imageFilePath);
-            
-            // Store file metadata in database
-            const imageFileData = await FileStorage.create({
-                original_name: imageFile.originalname,
-                file_path: `/uploads/salon/${imageFileName}`,
-                file_size: imageFile.size,
-                mime_type: imageFile.mimetype,
-                category: 'salon',
-                upload_date: new Date()
-            });
-            
-            // Delete old image if it's not the default
-            if (salon.image_url && !salon.image_url.includes('default-salon') && fs.existsSync(path.join(__dirname, '../../', salon.image_url))) {
-                fs.unlinkSync(path.join(__dirname, '../../', salon.image_url));
+            // Create uploads directory if it doesn't exist
+            const uploadDir = path.join(__dirname, '../../uploads/salon');
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
             }
             
-            salon.image_url = imageFileData.file_path;
+            // Handle logo upload
+            if (files.logo && files.logo[0]) {
+                console.log('Processing logo file:', files.logo[0].originalname);
+                const logoFile = files.logo[0];
+                const logoFileName = `${Date.now()}-logo-${path.basename(logoFile.originalname)}`;
+                const logoFilePath = path.join(uploadDir, logoFileName);
+                
+                // Move file from temp location to salon directory
+                fs.renameSync(logoFile.path, logoFilePath);
+                console.log('Logo file moved to:', logoFilePath);
+                
+                // Store file metadata in database
+                const logoFileData = await FileStorage.create({
+                    original_name: logoFile.originalname,
+                    file_path: `/uploads/salon/${logoFileName}`,
+                    file_size: logoFile.size,
+                    mime_type: logoFile.mimetype,
+                    category: 'salon',
+                    upload_date: new Date()
+                }, { transaction });
+                console.log('Logo file metadata saved:', logoFileData.toJSON());
+                
+                // Delete old logo if it's not the default
+                if (salon.logo_url && !salon.logo_url.includes('default-logo') && fs.existsSync(path.join(__dirname, '../../', salon.logo_url))) {
+                    fs.unlinkSync(path.join(__dirname, '../../', salon.logo_url));
+                    console.log('Old logo deleted:', salon.logo_url);
+                }
+                
+                // Update the logo_url field
+                const oldLogoUrl = salon.logo_url;
+                salon.logo_url = logoFileData.file_path;
+                console.log(`Salon logo_url updated from "${oldLogoUrl}" to "${salon.logo_url}"`);
+            }
+            
+            // Handle image upload
+            if (files.image && files.image[0]) {
+                console.log('Processing image file:', files.image[0].originalname);
+                const imageFile = files.image[0];
+                const imageFileName = `${Date.now()}-image-${path.basename(imageFile.originalname)}`;
+                const imageFilePath = path.join(uploadDir, imageFileName);
+                
+                // Move file from temp location to salon directory
+                fs.renameSync(imageFile.path, imageFilePath);
+                console.log('Image file moved to:', imageFilePath);
+                
+                // Store file metadata in database
+                const imageFileData = await FileStorage.create({
+                    original_name: imageFile.originalname,
+                    file_path: `/uploads/salon/${imageFileName}`,
+                    file_size: imageFile.size,
+                    mime_type: imageFile.mimetype,
+                    category: 'salon',
+                    upload_date: new Date()
+                }, { transaction });
+                console.log('Image file metadata saved:', imageFileData.toJSON());
+                
+                // Delete old image if it's not the default
+                if (salon.image_url && !salon.image_url.includes('default-salon') && fs.existsSync(path.join(__dirname, '../../', salon.image_url))) {
+                    fs.unlinkSync(path.join(__dirname, '../../', salon.image_url));
+                    console.log('Old image deleted:', salon.image_url);
+                }
+                
+                // Update the image_url field
+                const oldImageUrl = salon.image_url;
+                salon.image_url = imageFileData.file_path;
+                console.log(`Salon image_url updated from "${oldImageUrl}" to "${salon.image_url}"`);
+            }
+            
+            // Save the updated salon information
+            const result = await salon.save({ transaction });
+            console.log('Salon data saving result:', result ? 'Success' : 'Failed');
+            
+            // All operations succeeded, commit the transaction
+            await transaction.commit();
+            console.log('Transaction committed, all changes saved');
+            
+            // Return the updated salon data
+            console.log('Salon data saved successfully:', salon.toJSON());
+            res.status(200).json(salon);
+        } catch (error) {
+            // Roll back the transaction in case of error
+            await transaction.rollback();
+            console.error('Transaction rolled back due to error:', error);
+            throw error; // Re-throw for outer catch block
         }
-        
-        // Save the updated salon information
-        await salon.save();
-        
-        res.status(200).json(salon);
     } catch (error) {
         console.error('Error updating salon info:', error);
         
@@ -104,6 +159,7 @@ exports.updateSalonInfo = async (req, res) => {
             Object.values(req.files).flat().forEach(file => {
                 if (fs.existsSync(file.path)) {
                     fs.unlinkSync(file.path);
+                    console.log('Cleaned up temp file after error:', file.path);
                 }
             });
         }

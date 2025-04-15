@@ -13,10 +13,18 @@ class AppointmentService {
   
   async getUpcomingAppointments() {
     try {
-      const response = await api.get('/admin/appointments/upcoming');
+      // Get all appointments directly instead of using the specific endpoint
+      const response = await api.get('/admin/appointments');
       
-      // Map the response data to ensure consistent format with other methods
-      const mappedAppointments = response.data.map(appointment => ({
+      // Filter for future appointments regardless of status
+      const now = new Date();
+      const upcomingAppointments = response.data.filter(appointment => {
+        const appointmentDate = new Date(appointment.appointment_date);
+        return appointmentDate > now;
+      });
+      
+      // Map the filtered appointments
+      const mappedAppointments = upcomingAppointments.map(appointment => ({
         ...appointment,
         UtilisateurId: appointment.user_id,
         BarbierId: appointment.barber_id,
@@ -33,7 +41,6 @@ class AppointmentService {
       
       return mappedAppointments;
     } catch (error) {
-      console.error('API Error:', error.response?.data || error);
       throw new Error(error.response?.data?.message || 'Failed to fetch upcoming appointments');
     }
   }
@@ -104,7 +111,6 @@ class AppointmentService {
       
       return mappedResponse;
     } catch (error) {
-      console.error('API Error:', error.response?.data || error);
       throw new Error(error.response?.data?.message || 'Failed to update appointment status');
     }
   }
@@ -132,19 +138,15 @@ class AppointmentService {
     try {
       // Get today's date in the format expected by the backend (YYYY-MM-DD)
       const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
-      console.log('Fetching appointments for date:', today);
       
-      // Get all appointments and filter locally for today
+      // Get all appointments directly instead of using the specific endpoint
       const response = await api.get('/admin/appointments');
-      console.log('Received all appointments:', response.data);
       
       // Filter appointments for today
       const todayAppointments = response.data.filter(appointment => {
         const appointmentDate = new Date(appointment.appointment_date).toISOString().split('T')[0];
         return appointmentDate === today;
       });
-      
-      console.log('Filtered today\'s appointments:', todayAppointments);
       
       // Map the response data to ensure consistent format with other methods
       const mappedAppointments = todayAppointments.map(appointment => ({
@@ -158,10 +160,8 @@ class AppointmentService {
                 appointment.status === 'completed' ? 'terminé' : 'confirmé'
       }));
       
-      console.log('Mapped today\'s appointments:', mappedAppointments);
       return mappedAppointments;
     } catch (error) {
-      console.error('API Error when fetching today\'s appointments:', error.response?.data || error);
       throw new Error(error.response?.data?.message || 'Failed to fetch today\'s appointments');
     }
   }

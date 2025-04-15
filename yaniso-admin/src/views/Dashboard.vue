@@ -283,12 +283,9 @@
       
       const loadAppointmentsCount = async () => {
         try {
-          console.log('Start loading appointments count')
           await store.dispatch('appointments/fetchTodayAppointments')
           const todayAppointments = store.getters['appointments/todayAppointments']
-          console.log('Today appointments from getter:', todayAppointments)
           appointmentsCount.value = todayAppointments.length
-          console.log('Set appointments count to:', appointmentsCount.value)
         } catch (error) {
           console.error('Error loading appointments count:', error)
           appointmentsCount.value = 0 // Set a fallback value
@@ -311,7 +308,24 @@
         
         try {
           await store.dispatch('appointments/fetchUpcomingAppointments')
-          upcomingAppointments.value = store.getters['appointments/upcomingAppointments'].slice(0, 5)
+          const allUpcoming = store.getters['appointments/upcomingAppointments']
+          
+          // Get all appointments if we don't have enough upcoming ones
+          if (allUpcoming.length === 0) {
+            await store.dispatch('appointments/fetchAppointments')
+            const allAppointments = store.getters['appointments/appointments']
+            
+            // Filter future appointments
+            const now = new Date()
+            const futureAppointments = allAppointments.filter(a => new Date(a.date) > now)
+            
+            // Sort by date - display all appointments
+            futureAppointments.sort((a, b) => new Date(a.date) - new Date(b.date))
+            upcomingAppointments.value = futureAppointments
+          } else {
+            // Display all upcoming appointments
+            upcomingAppointments.value = allUpcoming
+          }
         } catch (error) {
           console.error('Error loading upcoming appointments:', error)
           upcomingAppointmentsError.value = 'Unable to load upcoming appointments'
