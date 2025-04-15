@@ -31,6 +31,8 @@
   </template>
   
   <script>
+  import { formatBarberImageUrl } from '@/utils/imageHelpers';
+  
   export default {
     name: 'BarbierCard',
     props: {
@@ -41,14 +43,10 @@
     },
     computed: {
       barbierImageUrl() {
-        // Check if the photo URL is valid, otherwise use a default image
-        if (this.barbier.photoUrl && !this.barbier.photoUrl.includes('imgur')) {
-          return this.barbier.photoUrl
-        }
-        return '/images/default-barber.jpg'
+        return formatBarberImageUrl(this.barbier, this.barbier.id);
       },
       formattedRating() {
-        const rating = parseFloat(this.barbier.note);
+        const rating = parseFloat(this.barbier.note || this.barbier.rating);
         return isNaN(rating) ? '0.0' : rating.toFixed(1);
       }
     }

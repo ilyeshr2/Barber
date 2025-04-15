@@ -261,6 +261,7 @@
   import { formatDate, formatTime } from '@/utils/format'
   import Loader from '@/components/common/Loader.vue'
   import ConfirmModal from '@/components/common/ConfirmModal.vue'
+  import { notify } from '@/utils/notification'
   
   export default {
     name: 'ClientsView',
@@ -344,6 +345,7 @@
       
       const editClient = (client) => {
         isEditing.value = true
+        selectedClient.value = client
         clientForm.value = {
           ...client,
           dateNaissance: client.dateNaissance ? new Date(client.dateNaissance).toISOString().split('T')[0] : '',
@@ -377,14 +379,22 @@
               id: selectedClient.value.id,
               data: clientData
             })
+            notify.success('Client updated successfully')
           } else {
             await store.dispatch('clients/createClient', clientData)
+            notify.success('Client created successfully')
           }
           
           closeModal()
+          loadClients() // Reload clients after saving
         } catch (error) {
           console.error('Error saving client:', error)
-          // Handle error (show error message)
+          // Check for specific error messages
+          if (error.message && error.message.includes('phone number already exists')) {
+            notify.error('This phone number is already registered. Please use a different phone number.')
+          } else {
+            notify.error(error.message || 'Error saving client information')
+          }
         } finally {
           saving.value = false
         }
@@ -399,8 +409,14 @@
         if (clientToDelete.value) {
           try {
             await store.dispatch('clients/deleteClient', clientToDelete.value.id)
+            notify.success('Client deleted successfully')
           } catch (error) {
             console.error('Error deleting client:', error)
+            if (error.message && error.message.includes('upcoming appointments')) {
+              notify.error('Cannot delete client with upcoming appointments. Please cancel all appointments first.')
+            } else {
+              notify.error(error.message || 'Error deleting client')
+            }
           }
         }
       }

@@ -158,6 +158,7 @@
   import ServiceForm from '@/components/services/ServiceForm.vue'
   import ConfirmModal from '@/components/common/ConfirmModal.vue'
   import Loader from '@/components/common/Loader.vue'
+  import { formatBarberImageUrl } from '@/utils/imageHelpers'
   
   export default {
     name: 'BarbierServicesView',
@@ -213,30 +214,24 @@
       }
       
       const getBarbierImage = () => {
-  if (!barbier.value) return '/images/default-barber.jpg'
-  
-  // Check if the photo URL is valid, otherwise use a default image
-  if (barbier.value.photoUrl && !barbier.value.photoUrl.includes('imgur')) {
-    return barbier.value.photoUrl
-  }
-  // Return a default image based on barber ID
-  return `/images/barber-${(barbierId.value % 5) + 1}.jpg`
-}
+        if (!barbier.value) return '/images/default-barber.jpg'
+        return formatBarberImageUrl(barbier.value, barbierId.value)
+      }
       
-const showAddModal = () => {
-  if (!barbier.value) return
-  
-  isEditing.value = false
-  currentService.value = {
-    nom: '',
-    duree: 30,
-    prix: 500,
-    BarberId: barbier.value.id
-  }
-  
-  const modal = new Modal(serviceModal.value)
-  modal.show()
-}
+      const showAddModal = () => {
+        if (!barbier.value) return
+        
+        isEditing.value = false
+        currentService.value = {
+          nom: '',
+          duree: 30,
+          prix: 500,
+          BarberId: barbier.value.id
+        }
+        
+        const modal = new Modal(serviceModal.value)
+        modal.show()
+      }
       
       const editService = (service) => {
         isEditing.value = true

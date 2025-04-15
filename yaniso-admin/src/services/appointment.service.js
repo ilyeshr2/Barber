@@ -14,8 +14,26 @@ class AppointmentService {
   async getUpcomingAppointments() {
     try {
       const response = await api.get('/admin/appointments/upcoming');
-      return response.data;
+      
+      // Map the response data to ensure consistent format with other methods
+      const mappedAppointments = response.data.map(appointment => ({
+        ...appointment,
+        UtilisateurId: appointment.user_id,
+        BarbierId: appointment.barber_id,
+        ServiceId: appointment.service_id,
+        date: appointment.appointment_date,
+        statut: appointment.status === 'confirmed' ? 'confirmé' : 
+                appointment.status === 'cancelled' ? 'annulé' : 
+                appointment.status === 'completed' ? 'terminé' : 'confirmé',
+        // Map nested objects if they exist
+        User: appointment.User,
+        Barbier: appointment.Barber,
+        Service: appointment.Service
+      }));
+      
+      return mappedAppointments;
     } catch (error) {
+      console.error('API Error:', error.response?.data || error);
       throw new Error(error.response?.data?.message || 'Failed to fetch upcoming appointments');
     }
   }
@@ -31,18 +49,62 @@ class AppointmentService {
   
   async createAppointment(appointmentData) {
     try {
-      const response = await api.post('/admin/appointments', appointmentData);
-      return response.data;
+      // Map frontend field names to backend expected names
+      const apiAppointmentData = {
+        user_id: appointmentData.UtilisateurId,
+        barber_id: appointmentData.BarbierId,
+        service_id: appointmentData.ServiceId,
+        appointment_date: appointmentData.date,
+        status: appointmentData.statut === 'confirmé' ? 'confirmed' : 
+                appointmentData.statut === 'annulé' ? 'cancelled' : 
+                appointmentData.statut === 'terminé' ? 'completed' : 'confirmed'
+      };
+      
+      const response = await api.post('/admin/appointments', apiAppointmentData);
+      
+      // Map the response back to frontend field names if needed
+      const mappedResponse = {
+        ...response.data,
+        UtilisateurId: response.data.user_id,
+        BarbierId: response.data.barber_id,
+        ServiceId: response.data.service_id,
+        date: response.data.appointment_date,
+        statut: response.data.status === 'confirmed' ? 'confirmé' : 
+                response.data.status === 'cancelled' ? 'annulé' : 
+                response.data.status === 'completed' ? 'terminé' : 'confirmé'
+      };
+      
+      return mappedResponse;
     } catch (error) {
+      console.error('API Error:', error.response?.data || error);
       throw new Error(error.response?.data?.message || 'Failed to create appointment');
     }
   }
   
   async updateAppointmentStatus(id, status) {
     try {
-      const response = await api.put(`/admin/appointments/${id}/status`, { status });
-      return response.data;
+      // Map frontend status to backend status
+      const backendStatus = status === 'confirmé' ? 'confirmed' :
+                          status === 'annulé' ? 'cancelled' :
+                          status === 'terminé' ? 'completed' : 'confirmed';
+      
+      const response = await api.put(`/admin/appointments/${id}/status`, { status: backendStatus });
+      
+      // Map the response back to frontend field names if needed
+      const mappedResponse = {
+        ...response.data,
+        UtilisateurId: response.data.user_id,
+        BarbierId: response.data.barber_id,
+        ServiceId: response.data.service_id,
+        date: response.data.appointment_date,
+        statut: response.data.status === 'confirmed' ? 'confirmé' : 
+                response.data.status === 'cancelled' ? 'annulé' : 
+                response.data.status === 'completed' ? 'terminé' : 'confirmé'
+      };
+      
+      return mappedResponse;
     } catch (error) {
+      console.error('API Error:', error.response?.data || error);
       throw new Error(error.response?.data?.message || 'Failed to update appointment status');
     }
   }
@@ -52,6 +114,7 @@ class AppointmentService {
       const response = await api.delete(`/admin/appointments/${id}`);
       return response.data;
     } catch (error) {
+      console.error('API Error:', error.response?.data || error);
       throw new Error(error.response?.data?.message || 'Failed to delete appointment');
     }
   }
@@ -67,10 +130,91 @@ class AppointmentService {
 
   async getTodayAppointments() {
     try {
-      const response = await api.get('/admin/appointments/today');
-      return response.data;
+      // Get today's date in the format expected by the backend (YYYY-MM-DD)
+      const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      console.log('Fetching appointments for date:', today);
+      
+      // Get all appointments and filter locally for today
+      const response = await api.get('/admin/appointments');
+      console.log('Received all appointments:', response.data);
+      
+      // Filter appointments for today
+      const todayAppointments = response.data.filter(appointment => {
+        const appointmentDate = new Date(appointment.appointment_date).toISOString().split('T')[0];
+        return appointmentDate === today;
+      });
+      
+      console.log('Filtered today\'s appointments:', todayAppointments);
+      
+      // Map the response data to ensure consistent format with other methods
+      const mappedAppointments = todayAppointments.map(appointment => ({
+        ...appointment,
+        UtilisateurId: appointment.user_id,
+        BarbierId: appointment.barber_id,
+        ServiceId: appointment.service_id,
+        date: appointment.appointment_date,
+        statut: appointment.status === 'confirmed' ? 'confirmé' : 
+                appointment.status === 'cancelled' ? 'annulé' : 
+                appointment.status === 'completed' ? 'terminé' : 'confirmé'
+      }));
+      
+      console.log('Mapped today\'s appointments:', mappedAppointments);
+      return mappedAppointments;
     } catch (error) {
+      console.error('API Error when fetching today\'s appointments:', error.response?.data || error);
       throw new Error(error.response?.data?.message || 'Failed to fetch today\'s appointments');
+    }
+  }
+
+  async updateAppointment(id, appointmentData) {
+    try {
+      // Since there's no direct endpoint to update the whole appointment,
+      // we need to use the available status update endpoint
+      // For now, just update the status and potentially add more business logic as needed
+      const backendStatus = appointmentData.statut === 'confirmé' ? 'confirmed' :
+                         appointmentData.statut === 'annulé' ? 'cancelled' :
+                         appointmentData.statut === 'terminé' ? 'completed' : 'confirmed';
+      
+      const response = await api.put(`/admin/appointments/${id}/status`, { status: backendStatus });
+      
+      console.log('Response from update status:', response.data);
+      
+      // Map the response back to frontend field names
+      const mappedResponse = {
+        ...response.data,
+        UtilisateurId: response.data.user_id,
+        BarbierId: response.data.barber_id,
+        ServiceId: response.data.service_id,
+        date: response.data.appointment_date,
+        statut: response.data.status === 'confirmed' ? 'confirmé' : 
+                response.data.status === 'cancelled' ? 'annulé' : 
+                response.data.status === 'completed' ? 'terminé' : 'confirmé'
+      };
+      
+      return mappedResponse;
+    } catch (error) {
+      console.error('API Error:', error.response?.data || error);
+      throw new Error(error.response?.data?.message || 'Failed to update appointment');
+    }
+  }
+
+  async cancelAppointment(id) {
+    try {
+      const response = await this.updateAppointmentStatus(id, 'annulé');
+      return response;
+    } catch (error) {
+      console.error('API Error:', error.response?.data || error);
+      throw new Error(error.response?.data?.message || 'Failed to cancel appointment');
+    }
+  }
+  
+  async completeAppointment(id) {
+    try {
+      const response = await this.updateAppointmentStatus(id, 'terminé');
+      return response;
+    } catch (error) {
+      console.error('API Error:', error.response?.data || error);
+      throw new Error(error.response?.data?.message || 'Failed to complete appointment');
     }
   }
 }

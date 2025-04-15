@@ -1,6 +1,11 @@
 <!--src/components/appointments/AppointmentForm.vue -->
 <template>
     <form @submit.prevent="handleSubmit">
+      <div v-if="isEditing" class="alert alert-info mb-3">
+        <i class="bi bi-info-circle me-2"></i>
+        En mode d'édition, seul le statut peut être modifié. Pour modifier d'autres informations, veuillez supprimer ce rendez-vous et en créer un nouveau.
+      </div>
+      
       <div class="row mb-3">
         <div class="col-md-6">
           <div class="mb-3">
@@ -11,6 +16,7 @@
               id="date" 
               v-model="formData.date"
               required
+              :disabled="isEditing"
             >
           </div>
         </div>
@@ -23,6 +29,7 @@
               id="time" 
               v-model="formData.time"
               required
+              :disabled="isEditing"
             >
           </div>
         </div>
@@ -35,6 +42,7 @@
           id="client" 
           v-model="formData.UtilisateurId"
           required
+          :disabled="isEditing"
         >
           <option value="">Select a client</option>
           <option v-for="client in clients" :key="client.id" :value="client.id">
@@ -51,6 +59,7 @@
           v-model="formData.BarbierId"
           required
           @change="loadBarbierServices"
+          :disabled="isEditing"
         >
           <option value="">Select a barber</option>
           <option v-for="barbier in barbiers" :key="barbier.id" :value="barbier.id">
@@ -66,7 +75,7 @@
           id="service" 
           v-model="formData.ServiceId"
           required
-          :disabled="!formData.BarbierId || loadingServices"
+          :disabled="isEditing || !formData.BarbierId || loadingServices"
         >
           <option value="">Select a service</option>
           <option v-for="service in filteredServices" :key="service.id" :value="service.id">

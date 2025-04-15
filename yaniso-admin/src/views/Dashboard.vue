@@ -90,12 +90,10 @@
                     <tr v-for="appointment in upcomingAppointments" :key="appointment.id">
                       <td>{{ formatDate(appointment.date) }}</td>
                       <td>
-                        {{ appointment.Utilisateur ? 
-                            `${appointment.Utilisateur.prenom} ${appointment.Utilisateur.nom}` : 
-                            'Unknown Client' }}
+                        {{ getClientName(appointment) }}
                       </td>
-                      <td>{{ appointment.Barbier ? appointment.Barbier.nom : 'Unknown Barber' }}</td>
-                      <td>{{ appointment.Service ? appointment.Service.nom : 'Unknown Service' }}</td>
+                      <td>{{ getBarbierName(appointment.BarbierId) }}</td>
+                      <td>{{ getServiceName(appointment.ServiceId) }}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -269,6 +267,7 @@
           barbiersCount.value = store.getters['barbiers/barbiers'].length
         } catch (error) {
           console.error('Error loading barbiers count:', error)
+          barbiersCount.value = 0 // Set a fallback value
         }
       }
       
@@ -278,15 +277,21 @@
           servicesCount.value = store.getters['services/allServices'].length
         } catch (error) {
           console.error('Error loading services count:', error)
+          servicesCount.value = 0 // Set a fallback value
         }
       }
       
       const loadAppointmentsCount = async () => {
         try {
+          console.log('Start loading appointments count')
           await store.dispatch('appointments/fetchTodayAppointments')
-          appointmentsCount.value = store.getters['appointments/todayAppointments'].length
+          const todayAppointments = store.getters['appointments/todayAppointments']
+          console.log('Today appointments from getter:', todayAppointments)
+          appointmentsCount.value = todayAppointments.length
+          console.log('Set appointments count to:', appointmentsCount.value)
         } catch (error) {
           console.error('Error loading appointments count:', error)
+          appointmentsCount.value = 0 // Set a fallback value
         }
       }
       
@@ -296,6 +301,7 @@
           clientsCount.value = store.getters['clients/clients'].length
         } catch (error) {
           console.error('Error loading clients count:', error)
+          clientsCount.value = 0 // Set a fallback value
         }
       }
       
@@ -309,6 +315,7 @@
         } catch (error) {
           console.error('Error loading upcoming appointments:', error)
           upcomingAppointmentsError.value = 'Unable to load upcoming appointments'
+          upcomingAppointments.value = [] // Set default empty array
         } finally {
           upcomingAppointmentsLoading.value = false
         }
@@ -363,6 +370,7 @@
         } catch (error) {
           console.error('Error loading services:', error)
           servicesError.value = 'Unable to load services'
+          services.value = [] // Set default empty array
         } finally {
           servicesLoading.value = false
         }
@@ -372,6 +380,29 @@
         const barbiers = store.getters['barbiers/barbiers']
         const barbier = barbiers.find(b => b.id === barbierId)
         return barbier ? barbier.nom : 'Unknown'
+      }
+      
+      const getClientName = (appointment) => {
+        // Check for various field patterns that might contain client info
+        if (appointment.Utilisateur) {
+          return `${appointment.Utilisateur.prenom} ${appointment.Utilisateur.nom}`
+        } else if (appointment.User) {
+          return `${appointment.User.first_name} ${appointment.User.last_name}`
+        } else if (appointment.user_id) {
+          const client = store.getters['clients/clients'].find(c => c.id === appointment.user_id)
+          return client ? `${client.prenom} ${client.nom}` : 'Unknown Client'
+        } else if (appointment.UtilisateurId) {
+          const client = store.getters['clients/clients'].find(c => c.id === appointment.UtilisateurId)
+          return client ? `${client.prenom} ${client.nom}` : 'Unknown Client'
+        } else {
+          return 'Unknown Client'
+        }
+      }
+      
+      const getServiceName = (serviceId) => {
+        const services = store.getters['services/allServices']
+        const service = services.find(s => s.id === serviceId)
+        return service ? service.nom : 'Unknown Service'
       }
       
       return {
@@ -390,7 +421,9 @@
         servicesError,
         formatDate,
         formatTime,
-        getBarbierName
+        getBarbierName,
+        getClientName,
+        getServiceName
       }
     }
   }

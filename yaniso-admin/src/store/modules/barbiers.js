@@ -1,6 +1,20 @@
 //src/store/modules/barbiers.js
 import BarbierService from '@/services/barbier.service'
 
+// Helper function to normalize barber data from API
+const normalizeBarber = (barber) => {
+  // Map API fields to frontend field names if needed
+  return {
+    id: barber.id,
+    nom: barber.name || barber.nom,
+    photoUrl: barber.photo_url || barber.photoUrl,
+    note: barber.rating || barber.note || 5.0,
+    nombreAvis: barber.review_count || barber.nombreAvis || 0,
+    salonId: barber.salon_id || barber.salonId || 1,
+    isActive: barber.is_active !== undefined ? barber.is_active : true
+  }
+}
+
 export default {
   namespaced: true,
   state: {
@@ -23,18 +37,19 @@ export default {
       state.error = error
     },
     SET_BARBIERS(state, barbiers) {
-      state.barbiers = barbiers
+      state.barbiers = barbiers.map(b => normalizeBarber(b))
     },
     SET_CURRENT_BARBIER(state, barbier) {
-      state.currentBarbier = barbier
+      state.currentBarbier = normalizeBarber(barbier)
     },
     ADD_BARBIER(state, barbier) {
-      state.barbiers.push(barbier)
+      state.barbiers.push(normalizeBarber(barbier))
     },
     UPDATE_BARBIER(state, updatedBarbier) {
-      const index = state.barbiers.findIndex(b => b.id === updatedBarbier.id)
+      const normalizedBarber = normalizeBarber(updatedBarbier)
+      const index = state.barbiers.findIndex(b => b.id === normalizedBarber.id)
       if (index !== -1) {
-        state.barbiers.splice(index, 1, updatedBarbier)
+        state.barbiers.splice(index, 1, normalizedBarber)
       }
     },
     REMOVE_BARBIER(state, barbierId) {
@@ -74,13 +89,29 @@ export default {
       }
     },
     
-    async createBarbier({ commit }, barbierData) {
+    async createBarbier({ commit, dispatch }, barbierData) {
       commit('SET_LOADING', true)
       commit('SET_ERROR', null)
       
       try {
-        const barbier = await BarbierService.createBarbier(barbierData)
+        // If data is not FormData, map field names for API
+        let mappedData = barbierData;
+        if (!(barbierData instanceof FormData) && typeof barbierData === 'object') {
+          // Map frontend field names to backend field names if not already mapped
+          if (barbierData.nom && !barbierData.name) {
+            mappedData = {
+              name: barbierData.nom,
+              rating: barbierData.note,
+              review_count: barbierData.nombreAvis,
+              salon_id: barbierData.salonId || 1
+            };
+          }
+        }
+        
+        const barbier = await BarbierService.createBarbier(mappedData)
         commit('ADD_BARBIER', barbier)
+        // Reload barbiers list to ensure consistency
+        await dispatch('fetchBarbiers')
         return barbier
       } catch (error) {
         commit('SET_ERROR', error.message)
@@ -90,13 +121,29 @@ export default {
       }
     },
     
-    async updateBarbier({ commit }, { id, data }) {
+    async updateBarbier({ commit, dispatch }, { id, data }) {
       commit('SET_LOADING', true)
       commit('SET_ERROR', null)
       
       try {
-        const barbier = await BarbierService.updateBarbier(id, data)
+        // If data is not FormData, map field names for API
+        let mappedData = data;
+        if (!(data instanceof FormData) && typeof data === 'object') {
+          // Map frontend field names to backend field names if not already mapped
+          if (data.nom && !data.name) {
+            mappedData = {
+              name: data.nom,
+              rating: data.note,
+              review_count: data.nombreAvis,
+              salon_id: data.salonId || 1
+            };
+          }
+        }
+        
+        const barbier = await BarbierService.updateBarbier(id, mappedData)
         commit('UPDATE_BARBIER', barbier)
+        // Reload barbiers list to ensure consistency
+        await dispatch('fetchBarbiers')
         return barbier
       } catch (error) {
         commit('SET_ERROR', error.message)

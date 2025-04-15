@@ -13,13 +13,21 @@
     </div>
     
     <div class="mb-3">
-      <label for="photoUrl" class="form-label">Photo URL</label>
+      <label for="photo" class="form-label">Photo</label>
+      <div v-if="previewImage" class="mb-3">
+        <img 
+          :src="previewImage" 
+          alt="Barber preview" 
+          class="img-fluid mb-2" 
+          style="max-height: 200px; width: auto;"
+        >
+      </div>
       <input 
-        type="url" 
+        type="file" 
         class="form-control" 
-        id="photoUrl" 
-        v-model="formData.photoUrl" 
-        placeholder="https://example.com/photo.jpg"
+        id="photo" 
+        @change="handlePhotoUpload"
+        accept="image/*"
       >
       <div class="form-text">Laisser vide pour utiliser une image par défaut</div>
     </div>
@@ -61,6 +69,7 @@
 
 <script>
 import { ref, watch } from 'vue'
+import { formatImageUrl } from '@/utils/imageHelpers'
 
 export default {
   name: 'BarbierForm',
@@ -90,19 +99,68 @@ export default {
       salonId: 1
     })
     
+    const photoFile = ref(null)
+    const previewImage = ref('')
+    
     // Update form data when barbier prop changes
     watch(() => props.barbier, (newBarbier) => {
       if (newBarbier) {
         formData.value = { ...newBarbier }
+        
+        // Set preview image if photo exists (check both field formats)
+        let photoUrl = newBarbier.photoUrl || newBarbier.photo_url;
+        if (photoUrl) {
+          previewImage.value = formatImageUrl(photoUrl);
+          
+          // Also set the photoUrl in formData for consistency
+          formData.value.photoUrl = photoUrl;
+        } else {
+          previewImage.value = '';
+        }
       }
     }, { immediate: true })
     
+    const handlePhotoUpload = (event) => {
+      const file = event.target.files[0]
+      if (file) {
+        photoFile.value = file
+        
+        // Create a preview
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          previewImage.value = e.target.result
+        }
+        reader.readAsDataURL(file)
+      }
+    }
+    
     const handleSubmit = () => {
-      emit('submit', { ...formData.value })
+      // Create FormData for file upload if we have a file
+      if (photoFile.value) {
+        const formDataToSubmit = new FormData()
+        formDataToSubmit.append('photo', photoFile.value)
+        formDataToSubmit.append('name', formData.value.nom)
+        formDataToSubmit.append('rating', formData.value.note)
+        formDataToSubmit.append('review_count', formData.value.nombreAvis)
+        formDataToSubmit.append('salon_id', formData.value.salonId)
+        
+        emit('submit', formDataToSubmit)
+      } else {
+        // No file, map frontend field names to backend field names
+        emit('submit', {
+          name: formData.value.nom,
+          rating: formData.value.note,
+          review_count: formData.value.nombreAvis,
+          salon_id: formData.value.salonId
+        })
+      }
     }
     
     return {
       formData,
+      photoFile,
+      previewImage,
+      handlePhotoUpload,
       handleSubmit
     }
   }

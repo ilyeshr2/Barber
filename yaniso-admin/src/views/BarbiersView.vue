@@ -77,6 +77,7 @@ import { Modal } from 'bootstrap'
 import BarbierCard from '@/components/barbiers/BarbierCard.vue'
 import BarbierForm from '@/components/barbiers/BarbierForm.vue'
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import { notify } from '@/utils/notification'
 
 export default {
   name: 'BarbiersView',
@@ -138,13 +139,16 @@ export default {
               id: currentBarbier.value.id,
               data: barbierData
             })
+            notify.success('Barbier mis à jour avec succès')
           } else {
             await store.dispatch('barbiers/createBarbier', barbierData)
+            notify.success('Barbier ajouté avec succès')
           }
           
           closeModal()
         } catch (error) {
           console.error('Error saving barbier:', error)
+          notify.error(error.message || 'Erreur lors de l\'enregistrement du barbier')
         }
       }
       
@@ -157,8 +161,10 @@ export default {
         if (barbierToDelete.value) {
           try {
             await store.dispatch('barbiers/deleteBarbier', barbierToDelete.value.id)
+            notify.success('Barbier supprimé avec succès')
           } catch (error) {
             console.error('Error deleting barbier:', error)
+            notify.error(error.message || 'Erreur lors de la suppression du barbier')
           }
         }
       }
@@ -186,3 +192,9 @@ export default {
     }
   }
   </script>
+  
+  <style scoped>
+  .barbiers-view {
+    min-height: 300px;
+  }
+  </style>

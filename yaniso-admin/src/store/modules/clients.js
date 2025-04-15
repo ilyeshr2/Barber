@@ -56,8 +56,19 @@ export default {
       
       try {
         const clients = await ClientService.getAllClients()
-        commit('SET_CLIENTS', clients)
-        return clients
+        // Map backend fields to frontend fields
+        const mappedClients = clients.map(client => ({
+          id: client.id,
+          prenom: client.first_name,
+          nom: client.last_name,
+          email: client.email,
+          telephone: client.telephone,
+          genre: client.gender,
+          dateNaissance: client.date_of_birth,
+          photoUrl: client.photo_url
+        }))
+        commit('SET_CLIENTS', mappedClients)
+        return mappedClients
       } catch (error) {
         commit('SET_ERROR', error.message)
         throw error
@@ -72,8 +83,19 @@ export default {
       
       try {
         const client = await ClientService.getClientById(id)
-        commit('SET_CURRENT_CLIENT', client)
-        return client
+        // Map backend fields to frontend fields
+        const mappedClient = {
+          id: client.id,
+          prenom: client.first_name,
+          nom: client.last_name,
+          email: client.email,
+          telephone: client.telephone,
+          genre: client.gender,
+          dateNaissance: client.date_of_birth,
+          photoUrl: client.photo_url
+        }
+        commit('SET_CURRENT_CLIENT', mappedClient)
+        return mappedClient
       } catch (error) {
         commit('SET_ERROR', error.message)
         throw error
@@ -103,8 +125,19 @@ export default {
       
       try {
         const client = await ClientService.createClient(clientData)
-        commit('ADD_CLIENT', client)
-        return client
+        // Map backend fields to frontend fields
+        const mappedClient = {
+          id: client.id,
+          prenom: client.first_name,
+          nom: client.last_name,
+          email: client.email,
+          telephone: client.telephone,
+          genre: client.gender,
+          dateNaissance: client.date_of_birth,
+          photoUrl: client.photo_url
+        }
+        commit('ADD_CLIENT', mappedClient)
+        return mappedClient
       } catch (error) {
         commit('SET_ERROR', error.message)
         throw error
@@ -119,8 +152,19 @@ export default {
       
       try {
         const client = await ClientService.updateClient(id, data)
-        commit('UPDATE_CLIENT', client)
-        return client
+        // Map backend fields to frontend fields
+        const mappedClient = {
+          id: client.id,
+          prenom: client.first_name,
+          nom: client.last_name,
+          email: client.email,
+          telephone: client.telephone,
+          genre: client.gender,
+          dateNaissance: client.date_of_birth,
+          photoUrl: client.photo_url
+        }
+        commit('UPDATE_CLIENT', mappedClient)
+        return mappedClient
       } catch (error) {
         commit('SET_ERROR', error.message)
         throw error

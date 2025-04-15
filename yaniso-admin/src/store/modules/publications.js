@@ -82,7 +82,7 @@ export default {
       }
     },
     
-    async createPublication({ commit }, publicationData) {
+    async createPublication({ commit, dispatch }, publicationData) {
       commit('SET_LOADING', true)
       commit('SET_ERROR', null)
       
@@ -98,7 +98,7 @@ export default {
       }
     },
     
-    async updatePublication({ commit }, { id, data }) {
+    async updatePublication({ commit, dispatch }, { id, data }) {
       commit('SET_LOADING', true)
       commit('SET_ERROR', null)
       

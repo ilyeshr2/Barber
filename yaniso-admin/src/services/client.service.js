@@ -1,4 +1,3 @@
-
 // src/services/client.service.js - Updated for dynamic data
 import api from './api';
 
@@ -32,18 +31,46 @@ class ClientService {
   
   async createClient(clientData) {
     try {
-      const response = await api.post('/admin/clients', clientData);
+      // Map frontend field names to backend expected names
+      const apiClientData = {
+        first_name: clientData.prenom,
+        last_name: clientData.nom,
+        email: clientData.email,
+        telephone: clientData.telephone,
+        date_of_birth: clientData.dateNaissance,
+        gender: clientData.genre,
+        password: clientData.motDePasse
+      };
+      
+      const response = await api.post('/admin/clients', apiClientData);
       return response.data;
     } catch (error) {
+      console.error('API Error:', error.response?.data || error);
       throw new Error(error.response?.data?.message || 'Failed to create client');
     }
   }
   
   async updateClient(id, clientData) {
     try {
-      const response = await api.put(`/admin/clients/${id}`, clientData);
+      // Map frontend field names to backend expected names
+      const apiClientData = {
+        first_name: clientData.prenom,
+        last_name: clientData.nom,
+        email: clientData.email,
+        telephone: clientData.telephone,
+        date_of_birth: clientData.dateNaissance,
+        gender: clientData.genre
+      };
+      
+      // Only include password if provided
+      if (clientData.motDePasse) {
+        apiClientData.password = clientData.motDePasse;
+      }
+      
+      const response = await api.put(`/admin/clients/${id}`, apiClientData);
       return response.data;
     } catch (error) {
+      console.error('API Error:', error.response?.data || error);
       throw new Error(error.response?.data?.message || 'Failed to update client');
     }
   }

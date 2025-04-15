@@ -128,12 +128,12 @@
       </div>
       
       <!-- Appointment Form Modal -->
-      <div class="modal fade" id="appointmentModal" tabindex="-1" aria-hidden="true" ref="appointmentModal">
+      <div class="modal fade" id="appointmentModal" tabindex="-1" ref="appointmentModal">
         <div class="modal-dialog modal-lg">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title">{{ isEditing ? 'Modifier Rendez-vous' : 'Nouveau Rendez-vous' }}</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" tabindex="0"></button>
             </div>
             <div class="modal-body">
               <AppointmentForm 
@@ -151,12 +151,12 @@
       </div>
       
       <!-- Appointment Details Modal -->
-      <div class="modal fade" id="appointmentDetailsModal" tabindex="-1" aria-hidden="true" ref="appointmentDetailsModal">
+      <div class="modal fade" id="appointmentDetailsModal" tabindex="-1" ref="appointmentDetailsModal">
         <div class="modal-dialog">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title">Détails du Rendez-vous</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" tabindex="0"></button>
             </div>
             <div class="modal-body">
               <AppointmentDetails 
@@ -168,8 +168,8 @@
               />
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-              <button type="button" class="btn btn-primary" @click="editAppointmentFromDetails">Modifier</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" tabindex="0">Fermer</button>
+              <button type="button" class="btn btn-primary" @click="editAppointmentFromDetails" tabindex="0">Modifier le statut</button>
             </div>
           </div>
         </div>
@@ -192,6 +192,7 @@
   import { useStore } from 'vuex'
   import { Modal } from 'bootstrap'
   import { formatDate, formatTime } from '@/utils/format'
+  import { notify } from '@/utils/notification'
   import AppointmentCalendar from '@/components/appointments/AppointmentCalendar.vue'
   import AppointmentForm from '@/components/appointments/AppointmentForm.vue'
   import AppointmentDetails from '@/components/appointments/AppointmentDetails.vue'
@@ -334,17 +335,38 @@
       const saveAppointment = async (appointmentData) => {
         try {
           if (isEditing.value) {
-            await store.dispatch('appointments/updateAppointment', {
-              id: currentAppointment.value.id,
-              data: appointmentData
-            })
+            // In edit mode, we can only update the status currently
+            // Check if only the status has changed
+            if (appointmentData.statut !== currentAppointment.value.statut) {
+              await store.dispatch('appointments/updateAppointment', {
+                id: currentAppointment.value.id,
+                data: appointmentData
+              })
+              notify.success('Statut du rendez-vous mis à jour avec succès')
+            } else {
+              // If other fields were changed, show a warning that only status updates are supported
+              notify.warning('Seule la mise à jour du statut est prise en charge pour le moment. Les autres champs ne seront pas modifiés.')
+              
+              // Update status only
+              if (appointmentData.statut !== currentAppointment.value.statut) {
+                await store.dispatch('appointments/updateAppointment', {
+                  id: currentAppointment.value.id,
+                  data: { statut: appointmentData.statut }
+                })
+                notify.success('Statut du rendez-vous mis à jour avec succès')
+              }
+            }
           } else {
             await store.dispatch('appointments/createAppointment', appointmentData)
+            notify.success('Rendez-vous créé avec succès')
           }
           
           closeModal()
+          // Refresh the appointments list after saving
+          store.dispatch('appointments/fetchAppointments')
         } catch (error) {
           console.error('Error saving appointment:', error)
+          notify.error(error.message || 'Erreur lors de l\'enregistrement du rendez-vous')
         }
       }
       
@@ -357,8 +379,10 @@
         if (appointmentToDelete.value) {
           try {
             await store.dispatch('appointments/deleteAppointment', appointmentToDelete.value.id)
+            notify.success('Rendez-vous supprimé avec succès')
           } catch (error) {
             console.error('Error deleting appointment:', error)
+            notify.error(error.message || 'Erreur lors de la suppression du rendez-vous')
           }
         }
       }

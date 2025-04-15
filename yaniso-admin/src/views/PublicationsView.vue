@@ -33,7 +33,7 @@
       <div v-for="publication in publications" :key="publication.id" class="col-md-6 col-lg-4 mb-4">
         <div class="card h-100">
           <div class="card-img-container">
-            <img :src="publication.imageUrl || '/images/placeholder-post.jpg'" class="card-img-top" alt="Publication image">
+            <img :src="formatPublicationImageUrl(publication)" class="card-img-top" alt="Publication image">
             <div class="publication-date">
               {{ formatPublicationDate(publication.createdAt) }}
             </div>
@@ -46,12 +46,12 @@
             </div>
             <div class="d-flex align-items-center mb-3">
               <img 
-                :src="publication.authorImage || '/images/default-avatar.jpg'" 
+                :src="formatImageUrl(publication.author_image, '/images/default-avatar.jpg')" 
                 class="rounded-circle me-2" 
                 alt="Author avatar"
                 style="width: 30px; height: 30px; object-fit: cover;"
               >
-              <span class="text-muted small">{{ publication.authorName }}</span>
+              <span class="text-muted small">{{ publication.author_name }}</span>
             </div>
           </div>
           <div class="card-footer bg-white border-top-0">
@@ -119,9 +119,9 @@
               
               <div class="mb-3">
                 <label for="publicationImage" class="form-label">Image</label>
-                <div v-if="publicationForm.imageUrl" class="mb-3">
+                <div v-if="publicationForm.image_url" class="mb-3">
                   <img 
-                    :src="publicationForm.imageUrl" 
+                    :src="publicationForm.image_url" 
                     alt="Publication image" 
                     class="img-fluid mb-2" 
                     style="max-height: 200px; width: auto;"
@@ -142,16 +142,16 @@
                   type="text" 
                   class="form-control" 
                   id="authorName" 
-                  v-model="publicationForm.authorName"
+                  v-model="publicationForm.author_name"
                   required
                 >
               </div>
               
               <div class="mb-3">
                 <label for="authorImage" class="form-label">Image de l'auteur</label>
-                <div v-if="publicationForm.authorImage" class="mb-2">
+                <div v-if="publicationForm.author_image" class="mb-2">
                   <img 
-                    :src="publicationForm.authorImage" 
+                    :src="publicationForm.author_image" 
                     alt="Author image" 
                     class="img-thumbnail me-2" 
                     style="height: 50px; width: 50px; object-fit: cover;"
@@ -192,7 +192,7 @@
           <div class="modal-body">
             <div v-if="currentPublication" class="publication-details">
               <img 
-                :src="currentPublication.imageUrl || '/images/placeholder-post.jpg'" 
+                :src="formatPublicationImageUrl(currentPublication)" 
                 alt="Publication image" 
                 class="img-fluid rounded mb-3"
               >
@@ -207,13 +207,13 @@
               
               <div class="d-flex align-items-center mb-3">
                 <img 
-                  :src="currentPublication.authorImage || '/images/default-avatar.jpg'" 
+                  :src="formatImageUrl(currentPublication.author_image, '/images/default-avatar.jpg')" 
                   class="rounded-circle me-2" 
                   alt="Author avatar"
                   style="width: 40px; height: 40px; object-fit: cover;"
                 >
                 <div>
-                  <div class="fw-bold">{{ currentPublication.authorName }}</div>
+                  <div class="fw-bold">{{ currentPublication.author_name }}</div>
                   <div class="text-muted small">{{ formatPublicationDate(currentPublication.createdAt) }}</div>
                 </div>
               </div>
@@ -253,6 +253,7 @@ import Loader from '@/components/common/Loader.vue'
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import { notify } from '@/utils/notification'
 import { formatDate } from '@/utils/format'
+import { formatPublicationImageUrl, formatImageUrl } from '@/utils/imageHelpers'
 
 export default {
   name: 'PublicationsView',
@@ -276,9 +277,9 @@ export default {
       title: '',
       description: '',
       reactions: '',
-      imageUrl: '',
-      authorName: '',
-      authorImage: ''
+      image_url: '',
+      author_name: '',
+      author_image: ''
     })
     
     const loading = computed(() => store.getters['publications/loading'])
@@ -304,7 +305,7 @@ export default {
       // Set default author (could be the logged in user)
       const user = store.getters['auth/user']
       if (user) {
-        publicationForm.value.authorName = `${user.prenom} ${user.nom}`
+        publicationForm.value.author_name = `${user.prenom} ${user.nom}`
       }
       
       const modal = new Modal(publicationModal.value)
@@ -333,9 +334,9 @@ export default {
         title: publication.title || '',
         description: publication.description || '',
         reactions: publication.reactions || '',
-        imageUrl: publication.imageUrl || '',
-        authorName: publication.authorName || '',
-        authorImage: publication.authorImage || ''
+        image_url: publication.image_url || '',
+        author_name: publication.author_name || '',
+        author_image: publication.author_image || ''
       }
       
       const modal = new Modal(publicationModal.value)
@@ -354,9 +355,9 @@ export default {
         title: '',
         description: '',
         reactions: '',
-        imageUrl: '',
-        authorName: '',
-        authorImage: ''
+        image_url: '',
+        author_name: '',
+        author_image: ''
       }
       publicationImageFile.value = null
       authorImageFile.value = null
@@ -371,7 +372,7 @@ export default {
         formData.append('title', publicationForm.value.title)
         formData.append('description', publicationForm.value.description)
         formData.append('reactions', publicationForm.value.reactions)
-        formData.append('authorName', publicationForm.value.authorName)
+        formData.append('author_name', publicationForm.value.author_name)
         
         // Add image files if selected
         if (publicationImageFile.value) {
@@ -394,6 +395,7 @@ export default {
         }
         
         closeModal()
+        loadPublications() // Reload publications after saving
       } catch (error) {
         console.error('Error saving publication:', error)
         notify.error(error.message || 'Erreur lors de l\'enregistrement de la publication')
@@ -434,7 +436,7 @@ export default {
         // Create a preview
         const reader = new FileReader()
         reader.onload = (e) => {
-          publicationForm.value.imageUrl = e.target.result
+          publicationForm.value.image_url = e.target.result
         }
         reader.readAsDataURL(file)
       }
@@ -448,7 +450,7 @@ export default {
         // Create a preview
         const reader = new FileReader()
         reader.onload = (e) => {
-          publicationForm.value.authorImage = e.target.result
+          publicationForm.value.author_image = e.target.result
         }
         reader.readAsDataURL(file)
       }
@@ -487,7 +489,9 @@ export default {
       handleImageUpload,
       handleAuthorImageUpload,
       formatPublicationDate,
-      truncateText
+      truncateText,
+      formatPublicationImageUrl,
+      formatImageUrl
     }
   }
 }

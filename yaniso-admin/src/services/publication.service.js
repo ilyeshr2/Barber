@@ -1,4 +1,3 @@
-
 // src/services/publication.service.js - Updated for dynamic data
 import api from './api';
 
@@ -31,16 +30,19 @@ class PublicationService {
         if (!(publicationData instanceof FormData)) {
           const formData = new FormData();
           Object.keys(publicationData).forEach(key => {
-            if ((key === 'image' || key === 'authorImage') && publicationData[key] instanceof File) {
-              formData.append(key, publicationData[key]);
+            if (key === 'image' && publicationData[key] instanceof File) {
+              formData.append('image', publicationData[key]);
+            } else if (key === 'authorImage' && publicationData[key] instanceof File) {
+              formData.append('authorImage', publicationData[key]);
             } else {
-              formData.append(key, publicationData[key]);
+              // Map camelCase to snake_case for API
+              const apiKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+              formData.append(apiKey, publicationData[key]);
             }
           });
           requestData = formData;
-        } else {
-          requestData = publicationData;
-        }
+        } 
+        // If it's already FormData, pass it through (do not modify)
       }
       
       const response = await api.post('/admin/publications', requestData, {
@@ -48,6 +50,7 @@ class PublicationService {
       });
       return response.data;
     } catch (error) {
+      console.error('API Error:', error.response?.data || error);
       throw new Error(error.response?.data?.message || 'Failed to create publication');
     }
   }
@@ -62,16 +65,19 @@ class PublicationService {
         if (!(publicationData instanceof FormData)) {
           const formData = new FormData();
           Object.keys(publicationData).forEach(key => {
-            if ((key === 'image' || key === 'authorImage') && publicationData[key] instanceof File) {
-              formData.append(key, publicationData[key]);
+            if (key === 'image' && publicationData[key] instanceof File) {
+              formData.append('image', publicationData[key]);
+            } else if (key === 'authorImage' && publicationData[key] instanceof File) {
+              formData.append('authorImage', publicationData[key]);
             } else {
-              formData.append(key, publicationData[key]);
+              // Map camelCase to snake_case for API
+              const apiKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+              formData.append(apiKey, publicationData[key]);
             }
           });
           requestData = formData;
-        } else {
-          requestData = publicationData;
         }
+        // If it's already FormData, pass it through (do not modify)
       }
       
       const response = await api.put(`/admin/publications/${id}`, requestData, {
@@ -79,6 +85,7 @@ class PublicationService {
       });
       return response.data;
     } catch (error) {
+      console.error('API Error:', error.response?.data || error);
       throw new Error(error.response?.data?.message || 'Failed to update publication');
     }
   }

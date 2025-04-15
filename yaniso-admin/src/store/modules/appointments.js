@@ -30,6 +30,7 @@ export default {
       state.appointments = appointments
     },
     SET_TODAY_APPOINTMENTS(state, appointments) {
+      console.log('Setting today appointments in store:', appointments);
       state.todayAppointments = appointments
     },
     SET_UPCOMING_APPOINTMENTS(state, appointments) {
@@ -92,8 +93,25 @@ export default {
       
       try {
         const appointments = await AppointmentService.getAllAppointments()
-        commit('SET_APPOINTMENTS', appointments)
-        return appointments
+        // Map backend fields to frontend fields
+        const mappedAppointments = appointments.map(appointment => ({
+          id: appointment.id,
+          date: appointment.appointment_date,
+          UtilisateurId: appointment.user_id,
+          BarbierId: appointment.barber_id,
+          ServiceId: appointment.service_id,
+          statut: appointment.status === 'confirmed' ? 'confirmé' : 
+                 appointment.status === 'cancelled' ? 'annulé' : 
+                 appointment.status === 'completed' ? 'terminé' : 'confirmé',
+          User: appointment.User,
+          Barber: appointment.Barber,
+          Service: appointment.Service,
+          // Keep original fields too if needed elsewhere
+          ...appointment
+        }))
+        
+        commit('SET_APPOINTMENTS', mappedAppointments)
+        return mappedAppointments
       } catch (error) {
         commit('SET_ERROR', error.message)
         throw error
@@ -108,9 +126,13 @@ export default {
       
       try {
         const appointments = await AppointmentService.getTodayAppointments()
+        console.log('Appointments in store action:', appointments);
+        
+        // The service already maps the data, so we can directly use it
         commit('SET_TODAY_APPOINTMENTS', appointments)
         return appointments
       } catch (error) {
+        console.error('Error in fetchTodayAppointments action:', error);
         commit('SET_ERROR', error.message)
         throw error
       } finally {
@@ -124,8 +146,25 @@ export default {
       
       try {
         const appointments = await AppointmentService.getUpcomingAppointments()
-        commit('SET_UPCOMING_APPOINTMENTS', appointments)
-        return appointments
+        // Map backend fields to frontend fields
+        const mappedAppointments = appointments.map(appointment => ({
+          id: appointment.id,
+          date: appointment.appointment_date,
+          UtilisateurId: appointment.user_id,
+          BarbierId: appointment.barber_id,
+          ServiceId: appointment.service_id,
+          statut: appointment.status === 'confirmed' ? 'confirmé' : 
+                 appointment.status === 'cancelled' ? 'annulé' : 
+                 appointment.status === 'completed' ? 'terminé' : 'confirmé',
+          User: appointment.User,
+          Barber: appointment.Barber,
+          Service: appointment.Service,
+          // Keep original fields too if needed elsewhere
+          ...appointment
+        }))
+        
+        commit('SET_UPCOMING_APPOINTMENTS', mappedAppointments)
+        return mappedAppointments
       } catch (error) {
         commit('SET_ERROR', error.message)
         throw error
