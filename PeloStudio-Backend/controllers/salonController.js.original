@@ -1,4 +1,4 @@
-// controllers/salonController.js - FIXED VERSION
+// controllers/salonController.js - NEW FILE
 const { Salon, BusinessHours, SocialLinks } = require('../models');
 const path = require('path');
 const fs = require('fs');
@@ -23,12 +23,9 @@ const handleFileUpload = (file, folderName) => {
   return `/uploads/${folderName}/${fileName}`;
 };
 
-// Get salon information - FIXED to properly include business hours
+// Get salon information
 exports.getSalonInfo = async (req, res) => {
   try {
-    console.log('getSalonInfo called');
-    
-    // Find salon with related data
     const salon = await Salon.findOne({
       include: [
         {
@@ -46,42 +43,7 @@ exports.getSalonInfo = async (req, res) => {
       return res.status(404).json({ message: 'Salon information not found' });
     }
 
-    // Format business hours array
-    const businessHoursArray = salon.BusinessHours || [];
-    console.log('Business hours from database:', businessHoursArray.length);
-    
-    // Transform to camelCase for frontend if needed
-    const businessHours = businessHoursArray.map(hour => {
-      return {
-        day_of_week: hour.day_of_week,
-        is_open: hour.is_open,
-        open_time: hour.open_time,
-        close_time: hour.close_time
-      };
-    });
-    
-    // If no business hours found in relationship, use JSON field or create default
-    if (businessHours.length === 0 && salon.business_hours && Array.isArray(salon.business_hours)) {
-      console.log('Using business_hours from JSON field');
-      businessHours.push(...salon.business_hours);
-    }
-    
-    // Format social links as an object
-    const socialLinks = {};
-    salon.SocialLinks.forEach(link => {
-      socialLinks[link.platform] = link.url;
-    });
-    
-    // Combine data for response
-    const response = {
-      ...salon.toJSON(),
-      businessHours: businessHours,
-      socialLinks
-    };
-    
-    console.log('Response data businessHours length:', response.businessHours?.length || 0);
-    
-    res.json(response);
+    res.json(salon);
   } catch (error) {
     console.error('Error getting salon info:', error);
     res.status(500).json({ message: 'Server error' });
@@ -179,26 +141,12 @@ exports.updateSalonInfo = async (req, res) => {
   }
 };
 
-// Update business hours - FIXED to update both BusinessHours table and JSON
+// Update business hours
 exports.updateBusinessHours = async (req, res) => {
   try {
     const hours = req.body;
-    console.log('updateBusinessHours called with:', JSON.stringify(hours, null, 2));
     
-    let business_hours;
-    if (hours.business_hours && Array.isArray(hours.business_hours)) {
-      // Admin controller format
-      business_hours = hours.business_hours;
-      console.log('Using business_hours from request body object');
-    } else if (Array.isArray(hours)) {
-      // Regular controller format
-      business_hours = hours;
-      console.log('Using hours array directly from request body');
-    } else {
-      return res.status(400).json({ message: 'Invalid hours format. Array of 7 days required.' });
-    }
-    
-    if (!Array.isArray(business_hours) || business_hours.length !== 7) {
+    if (!Array.isArray(hours) || hours.length !== 7) {
       return res.status(400).json({ message: 'Invalid hours format. Array of 7 days required.' });
     }
     
@@ -209,44 +157,16 @@ exports.updateBusinessHours = async (req, res) => {
       return res.status(404).json({ message: 'Salon information not found' });
     }
     
-    console.log('Found salon id:', salon.id);
-    
-    // Update or create each business hour in the BusinessHours table
-    for (const hour of business_hours) {
-      console.log(`Updating day ${hour.day_of_week} (is_open: ${hour.is_open})`);
-      
-      // Try to find existing record first
-      let existingHour = await BusinessHours.findOne({
-        where: { 
-          salonId: salon.id,
-          day_of_week: hour.day_of_week
-        }
+    // Update or create each business hour
+    for (const hour of hours) {
+      await BusinessHours.upsert({
+        day_of_week: hour.day_of_week,
+        is_open: hour.is_open,
+        open_time: hour.open_time,
+        close_time: hour.close_time,
+        salonId: salon.id
       });
-      
-      if (existingHour) {
-        // Update existing record
-        existingHour.is_open = hour.is_open;
-        existingHour.open_time = hour.open_time;
-        existingHour.close_time = hour.close_time;
-        await existingHour.save();
-        console.log(`Updated existing record for day ${hour.day_of_week}`);
-      } else {
-        // Create new record
-        await BusinessHours.create({
-          salonId: salon.id,
-          day_of_week: hour.day_of_week,
-          is_open: hour.is_open,
-          open_time: hour.open_time,
-          close_time: hour.close_time
-        });
-        console.log(`Created new record for day ${hour.day_of_week}`);
-      }
     }
-    
-    // Also update the business_hours JSON field in the Salon table for compatibility
-    salon.business_hours = business_hours;
-    await salon.save();
-    console.log('Updated business_hours JSON field in Salon table');
     
     // Get updated business hours
     const updatedHours = await BusinessHours.findAll({
@@ -254,9 +174,7 @@ exports.updateBusinessHours = async (req, res) => {
       order: [['day_of_week', 'ASC']]
     });
     
-    console.log(`Returning ${updatedHours.length} updated business hours`);
-    
-    res.status(200).json({ business_hours: updatedHours });
+    res.status(200).json(updatedHours);
   } catch (error) {
     console.error('Error updating business hours:', error);
     res.status(500).json({ message: 'Error updating business hours' });

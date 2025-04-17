@@ -173,8 +173,6 @@ exports.updateBusinessHours = async (req, res) => {
         // Get business hours from request body
         const { business_hours } = req.body;
         
-        console.log('⏰ updateBusinessHours called with data:', JSON.stringify(req.body, null, 2));
-        
         // Validate business hours format
         if (!business_hours || !Array.isArray(business_hours) || business_hours.length !== 7) {
             return res.status(400).json({ 
@@ -198,90 +196,41 @@ exports.updateBusinessHours = async (req, res) => {
             }
         }
         
-        try {
-            // Import models
-            console.log('🔍 Importing models...');
-            const db = require('../../models');
-            console.log('✅ Models imported, BusinessHours:', db.BusinessHours ? 'OK' : 'Missing');
-            
-            // Find existing salon
-            console.log('🔍 Finding salon...');
-            const salon = await db.Salon.findOne();
-            if (!salon) {
-                return res.status(404).json({ message: 'Salon not found' });
-            }
-            
-            console.log('🏪 Found salon id:', salon.id);
-            
-            // Update business hours in the BusinessHours table
-            for (const day of business_hours) {
-                console.log(`🔄 Processing day ${day.day_of_week}, is_open: ${day.is_open}`);
-                
-                try {
-                    // Try to find the existing record
-                    console.log(`🔍 Finding record for day ${day.day_of_week}...`);
-                    const existingHour = await db.BusinessHours.findOne({
-                        where: { 
-                            salon_id: salon.id,
-                            day_of_week: day.day_of_week
-                        }
-                    });
-                    
-                    if (existingHour) {
-                        // Update existing record
-                        console.log(`📝 Updating existing record for day ${day.day_of_week}`);
-                        existingHour.is_open = day.is_open;
-                        existingHour.open_time = day.open_time;
-                        existingHour.close_time = day.close_time;
-                        await existingHour.save();
-                        console.log(`✅ Successfully updated day ${day.day_of_week}, is_open: ${existingHour.is_open}`);
-                    } else {
-                        // Create new record
-                        console.log(`➕ Creating new record for day ${day.day_of_week}`);
-                        await db.BusinessHours.create({
-                            salon_id: salon.id,
-                            day_of_week: day.day_of_week,
-                            is_open: day.is_open,
-                            open_time: day.open_time,
-                            close_time: day.close_time
-                        });
-                        console.log(`✅ Successfully created day ${day.day_of_week}`);
-                    }
-                } catch (dayError) {
-                    console.error(`❌ Error processing day ${day.day_of_week}:`, dayError);
-                    throw dayError; // Re-throw to be caught by outer catch
-                }
-            }
-            
-            // Also update the business_hours in the salon record for backward compatibility
-            console.log('📝 Updating business_hours JSON field in salon record...');
-            salon.business_hours = business_hours;
-            await salon.save();
-            console.log('💾 Updated business_hours in Salon table');
-            
-            // Get updated business hours from database to verify changes
-            console.log('🔍 Fetching updated business hours...');
-            const updatedHours = await db.BusinessHours.findAll({
-                where: { salon_id: salon.id },
-                order: [['day_of_week', 'ASC']]
-            });
-            
-            console.log('📊 Final business hours state:', JSON.stringify(updatedHours.map(h => ({
-                day_of_week: h.day_of_week,
-                is_open: h.is_open,
-                open_time: h.open_time,
-                close_time: h.close_time
-            })), null, 2));
-            
-            res.status(200).json({ business_hours: updatedHours });
-        } catch (innerError) {
-            console.error('⚠️ Inner error in updateBusinessHours:', innerError);
-            console.error('⚠️ Inner error stack:', innerError.stack);
-            throw innerError; // Re-throw to be caught by outer catch
+        // Find existing salon
+        const salon = await Salon.findOne();
+        if (!salon) {
+            return res.status(404).json({ message: 'Salon not found' });
         }
+        
+        // Import the BusinessHours model
+        const { BusinessHours } = require('../../models');
+        
+        // Update business hours in the BusinessHours table
+        for (const day of business_hours) {
+            await BusinessHours.update(
+                {
+                    is_open: day.is_open,
+                    open_time: day.open_time,
+                    close_time: day.close_time
+                },
+                {
+                    where: {
+                        salon_id: salon.id,
+                        day_of_week: day.day_of_week
+                    }
+                }
+            );
+        }
+        
+        // Get updated business hours
+        const updatedHours = await BusinessHours.findAll({
+            where: { salon_id: salon.id },
+            order: [['day_of_week', 'ASC']]
+        });
+        
+        res.status(200).json({ business_hours: updatedHours });
     } catch (error) {
-        console.error('❌ Error updating business hours:', error);
-        console.error('❌ Error stack:', error.stack);
+        console.error('Error updating business hours:', error);
         res.status(500).json({ message: 'Server error while updating business hours' });
     }
 }; 

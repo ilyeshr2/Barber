@@ -36,14 +36,18 @@ export default {
       
       try {
         const salonInfo = await SalonService.getSalonInfo()
+        
         commit('SET_SALON_INFO', salonInfo)
         
-        if (salonInfo.businessHours) {
+        if (salonInfo.businessHours && Array.isArray(salonInfo.businessHours)) {
           commit('SET_BUSINESS_HOURS', salonInfo.businessHours)
+        } else {
+          console.warn('No business hours received from API')
         }
         
         return salonInfo
       } catch (error) {
+        console.error('Error fetching salon info:', error)
         commit('SET_ERROR', error.message)
         throw error
       } finally {
@@ -56,10 +60,7 @@ export default {
       commit('SET_ERROR', null)
       
       try {
-        console.log('Salon store: updateSalonInfo action received data', salonData)
-        
         const updatedSalon = await SalonService.updateSalonInfo(salonData)
-        console.log('Salon store: received response from service:', updatedSalon)
         
         // Normalize field names if necessary
         const normalizedSalon = {
@@ -68,11 +69,10 @@ export default {
           imageUrl: updatedSalon.image_url || updatedSalon.imageUrl
         }
         
-        console.log('Salon store: normalized salon data:', normalizedSalon)
         commit('SET_SALON_INFO', normalizedSalon)
         return normalizedSalon
       } catch (error) {
-        console.error('Salon store: error in updateSalonInfo action:', error)
+        console.error('Error in updateSalonInfo action:', error)
         commit('SET_ERROR', error.message)
         throw error
       } finally {
@@ -87,11 +87,26 @@ export default {
       try {
         const updatedHours = await SalonService.updateBusinessHours(hoursData)
         
-        // Update business hours in state
-        await dispatch('fetchSalonInfo')
+        // Instead of immediately dispatching fetchSalonInfo, let's extract and save the hours
+        if (updatedHours && updatedHours.business_hours) {
+          // Convert snake_case to camelCase for frontend
+          const formattedHours = updatedHours.business_hours.map(day => ({
+            dayOfWeek: day.day_of_week,
+            isOpen: day.is_open,
+            openTime: day.open_time,
+            closeTime: day.close_time
+          }))
+          
+          commit('SET_BUSINESS_HOURS', formattedHours)
+        } else {
+          console.warn('No business_hours in the response, falling back to fetchSalonInfo')
+          // Fall back to fetchSalonInfo to refresh data
+          await dispatch('fetchSalonInfo')
+        }
         
         return updatedHours
       } catch (error) {
+        console.error('Error in updateBusinessHours action:', error)
         commit('SET_ERROR', error.message)
         throw error
       } finally {

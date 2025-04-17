@@ -52,20 +52,14 @@
                 Désélectionner tous
               </button>
             </div>
-            <div class="barber-select-container">
-              <div v-for="barbier in filteredBarbiers" :key="barbier.id" class="form-check mb-2">
-                <input 
-                  class="form-check-input" 
-                  type="checkbox" 
-                  :id="`barbier-${barbier.id}`" 
-                  v-model="formData.BarberIds" 
-                  :value="barbier.id"
-                >
-                <label class="form-check-label" :for="`barbier-${barbier.id}`">
-                  {{ barbier.nom }}
-                </label>
-              </div>
-            </div>
+            <select multiple class="form-select barber-select-dropdown" v-model="formData.BarberIds">
+              <option v-for="barbier in filteredBarbiers" :key="barbier.id" :value="barbier.id">
+                {{ barbier.nom }}
+              </option>
+            </select>
+            <small class="form-text text-muted mt-1">
+              Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs barbiers
+            </small>
           </div>
         </div>
       </div>
@@ -172,9 +166,8 @@ export default {
 </script>
 
 <style scoped>
-.barber-select-container {
+.barber-select-dropdown {
   max-height: 200px;
-  overflow-y: auto;
-  padding-right: 10px;
+  width: 100%;
 }
 </style>

@@ -93,9 +93,71 @@ class SalonService {
   
   async updateBusinessHours(hoursData) {
     try {
-      const response = await api.put('/admin/salon/hours', hoursData);
+      console.log('%c ===== BUSINESS HOURS UPDATE DEBUG =====', 'background: #222; color: #bada55; font-size: 14px;');
+      console.log('1. Raw data received by service:', JSON.stringify(hoursData, null, 2));
+      
+      // Wrap hours data in a business_hours property as expected by the API
+      const requestData = {
+        business_hours: hoursData
+      };
+      
+      console.log('2. Formatted request data:', JSON.stringify(requestData, null, 2));
+      console.log('3. API endpoint:', '/admin/salon/hours');
+      console.log('4. Request headers:', {
+        'Content-Type': 'application/json'
+      });
+      
+      // Add request interceptor to log the actual request
+      const requestInterceptor = api.interceptors.request.use(request => {
+        console.log('5. Actual API request configuration:', {
+          method: request.method,
+          url: request.url,
+          data: request.data,
+          headers: request.headers
+        });
+        return request;
+      });
+      
+      // Add response interceptor to log the response
+      const responseInterceptor = api.interceptors.response.use(
+        response => {
+          console.log('6. API response status:', response.status);
+          console.log('7. API response headers:', response.headers);
+          console.log('8. API response data:', response.data);
+          return response;
+        },
+        error => {
+          console.error('6. API ERROR status:', error.response?.status);
+          console.error('7. API ERROR data:', error.response?.data);
+          console.error('8. API ERROR headers:', error.response?.headers);
+          return Promise.reject(error);
+        }
+      );
+      
+      const response = await api.put('/admin/salon/hours', requestData, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      // Clean up interceptors
+      api.interceptors.request.eject(requestInterceptor);
+      api.interceptors.response.eject(responseInterceptor);
+      
+      console.log('9. Business hours update success. Processing returned data...');
+      console.log('10. Final response data:', response.data);
+      console.log('%c ===== END DEBUG =====', 'background: #222; color: #bada55; font-size: 14px;');
+      
       return response.data;
     } catch (error) {
+      console.error('%c ===== BUSINESS HOURS UPDATE ERROR =====', 'background: #f00; color: #fff; font-size: 14px;');
+      console.error('Error in updateBusinessHours:', error);
+      console.error('Error response data:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error headers:', error.response?.headers);
+      console.error('Stack trace:', error.stack);
+      console.error('%c ===== END ERROR =====', 'background: #f00; color: #fff; font-size: 14px;');
+      
       throw new Error(error.response?.data?.message || 'Failed to update business hours');
     }
   }

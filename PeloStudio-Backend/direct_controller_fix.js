@@ -1,4 +1,15 @@
-// controllers/salonController.js - FIXED VERSION
+/**
+ * This script directly replaces the controller file with a fixed version
+ * to ensure proper business hours handling.
+ */
+const fs = require('fs');
+const path = require('path');
+
+// Main controller path
+const salonControllerPath = path.join(__dirname, 'controllers', 'salonController.js');
+
+// Create fixed salon controller content
+const fixedSalonController = `// controllers/salonController.js - FIXED VERSION
 const { Salon, BusinessHours, SocialLinks } = require('../models');
 const path = require('path');
 const fs = require('fs');
@@ -13,14 +24,14 @@ const handleFileUpload = (file, folderName) => {
   
   // Generate unique filename
   const fileExt = path.extname(file.originalname);
-  const fileName = `${Date.now()}_${Math.floor(Math.random() * 10000)}${fileExt}`;
+  const fileName = \`\${Date.now()}_\${Math.floor(Math.random() * 10000)}\${fileExt}\`;
   const filePath = path.join(uploadsDir, fileName);
   
   // Write file to disk
   fs.writeFileSync(filePath, file.buffer);
   
   // Return relative path for database storage
-  return `/uploads/${folderName}/${fileName}`;
+  return \`/uploads/\${folderName}/\${fileName}\`;
 };
 
 // Get salon information - FIXED to properly include business hours
@@ -213,7 +224,7 @@ exports.updateBusinessHours = async (req, res) => {
     
     // Update or create each business hour in the BusinessHours table
     for (const hour of business_hours) {
-      console.log(`Updating day ${hour.day_of_week} (is_open: ${hour.is_open})`);
+      console.log(\`Updating day \${hour.day_of_week} (is_open: \${hour.is_open})\`);
       
       // Try to find existing record first
       let existingHour = await BusinessHours.findOne({
@@ -229,7 +240,7 @@ exports.updateBusinessHours = async (req, res) => {
         existingHour.open_time = hour.open_time;
         existingHour.close_time = hour.close_time;
         await existingHour.save();
-        console.log(`Updated existing record for day ${hour.day_of_week}`);
+        console.log(\`Updated existing record for day \${hour.day_of_week}\`);
       } else {
         // Create new record
         await BusinessHours.create({
@@ -239,7 +250,7 @@ exports.updateBusinessHours = async (req, res) => {
           open_time: hour.open_time,
           close_time: hour.close_time
         });
-        console.log(`Created new record for day ${hour.day_of_week}`);
+        console.log(\`Created new record for day \${hour.day_of_week}\`);
       }
     }
     
@@ -254,7 +265,7 @@ exports.updateBusinessHours = async (req, res) => {
       order: [['day_of_week', 'ASC']]
     });
     
-    console.log(`Returning ${updatedHours.length} updated business hours`);
+    console.log(\`Returning \${updatedHours.length} updated business hours\`);
     
     res.status(200).json({ business_hours: updatedHours });
   } catch (error) {
@@ -262,3 +273,23 @@ exports.updateBusinessHours = async (req, res) => {
     res.status(500).json({ message: 'Error updating business hours' });
   }
 };
+`;
+
+// Create backup of the original file if it exists
+if (fs.existsSync(salonControllerPath)) {
+  const backupPath = salonControllerPath + '.original';
+  fs.copyFileSync(salonControllerPath, backupPath);
+  console.log(`Original controller backed up to: ${backupPath}`);
+}
+
+// Write the fixed controller
+fs.writeFileSync(salonControllerPath, fixedSalonController);
+console.log(`Fixed controller written to: ${salonControllerPath}`);
+
+console.log('\nTo complete the fix:');
+console.log('1. Run the SQL script to update the database: node update_business_hours.sql');
+console.log('2. Restart your backend server');
+console.log('\nThe fix includes:');
+console.log('- Improved handling of business hours in the API responses');
+console.log('- Fixed business hours update to update both table and JSON field');
+console.log('- Added more detailed logging to help diagnose issues'); 

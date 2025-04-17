@@ -306,7 +306,7 @@ export default {
     
     const loadSalonInfo = async () => {
       try {
-        const salonData = await store.dispatch('salon/fetchSalonInfo')
+        const salonData = await store.dispatch('salon/fetchSalonInfo');
         
         // Update salon form with data
         salonForm.value = {
@@ -317,23 +317,36 @@ export default {
           description: salonData.description || '',
           logoUrl: salonData.logo_url || salonData.logoUrl || '',
           imageUrl: salonData.image_url || salonData.imageUrl || ''
+        };
+        
+        // Update logo and image files if needed
+        logoFile.value = null;
+        imageFile.value = null;
+        
+        // Update social links
+        if (salonData.socialLinks) {
+          socialLinks.value = salonData.socialLinks;
         }
         
         // Update business hours if available
-        if (salonData.businessHours && salonData.businessHours.length === 7) {
-          businessHours.value = salonData.businessHours
+        if (salonData.businessHours && Array.isArray(salonData.businessHours)) {
+          // Transform snake_case properties to camelCase for the frontend
+          businessHours.value = salonData.businessHours.map(day => ({
+            dayOfWeek: day.day_of_week !== undefined ? day.day_of_week : day.dayOfWeek,
+            isOpen: day.is_open !== undefined ? day.is_open : day.isOpen,
+            openTime: day.open_time || day.openTime || '09:00',
+            closeTime: day.close_time || day.closeTime || '18:00'
+          }));
+          
+          // Sort by day of week to ensure correct order
+          businessHours.value.sort((a, b) => a.dayOfWeek - b.dayOfWeek);
         }
         
-        // Update social links if available
-        if (salonData.socialLinks) {
-          socialLinks.value = {
-            facebook: salonData.socialLinks.facebook || '',
-            instagram: salonData.socialLinks.instagram || '',
-            tiktok: salonData.socialLinks.tiktok || ''
-          }
-        }
+        return salonData;
       } catch (error) {
-        console.error('Error loading salon info:', error)
+        console.error('Error loading salon info:', error);
+        notify.error('Erreur lors du chargement des informations du salon');
+        return null;
       }
     }
     
@@ -341,7 +354,6 @@ export default {
       savingBasicInfo.value = true
       
       try {
-        console.log('Starting salon info update')
         // Create FormData for file uploads
         const formData = new FormData()
         formData.append('name', salonForm.value.name)
@@ -352,19 +364,15 @@ export default {
         
         // Add logo file if selected
         if (logoFile.value) {
-          console.log('Appending logo file to FormData:', logoFile.value.name)
           formData.append('logo', logoFile.value)
         }
         
         // Add image file if selected
         if (imageFile.value) {
-          console.log('Appending image file to FormData:', imageFile.value.name)
           formData.append('image', imageFile.value)
         }
         
-        console.log('Dispatching salon/updateSalonInfo action')
         const result = await store.dispatch('salon/updateSalonInfo', formData)
-        console.log('Update completed successfully:', result)
         notify.success('Informations du salon mises à jour avec succès')
       } catch (error) {
         console.error('Error updating salon info:', error)
@@ -378,11 +386,36 @@ export default {
       savingHours.value = true
       
       try {
-        await store.dispatch('salon/updateBusinessHours', businessHours.value)
-        notify.success('Heures d\'ouverture mises à jour avec succès')
+        // Transform camelCase properties to snake_case as expected by the API
+        const formattedHours = businessHours.value.map(day => ({
+          day_of_week: day.dayOfWeek,
+          is_open: day.isOpen,
+          open_time: day.openTime,
+          close_time: day.closeTime
+        }));
+        
+        // Add function to check database after update
+        const checkDatabaseStatus = async () => {
+          try {
+            const freshData = await store.dispatch('salon/fetchSalonInfo');
+            return freshData;
+          } catch (error) {
+            console.error('Error verifying database state:', error);
+            return null;
+          }
+        };
+        
+        const result = await store.dispatch('salon/updateBusinessHours', formattedHours);
+        
+        // Give the database a moment to update
+        setTimeout(async () => {
+          await checkDatabaseStatus();
+        }, 1000);
+        
+        notify.success('Heures d\'ouverture mises à jour avec succès');
       } catch (error) {
-        console.error('Error updating business hours:', error)
-        notify.error('Erreur lors de la mise à jour des heures d\'ouverture')
+        console.error('Error updating business hours:', error);
+        notify.error('Erreur lors de la mise à jour des heures d\'ouverture');
       } finally {
         savingHours.value = false
       }
@@ -407,14 +440,12 @@ export default {
     const handleLogoUpload = (event) => {
       const file = event.target.files[0]
       if (file) {
-        console.log('Logo file selected:', file.name, file.type, file.size)
         logoFile.value = file
         
         // Create a preview
         const reader = new FileReader()
         reader.onload = (e) => {
           salonForm.value.logoUrl = e.target.result
-          console.log('Logo preview created')
         }
         reader.readAsDataURL(file)
       }
@@ -423,14 +454,12 @@ export default {
     const handleImageUpload = (event) => {
       const file = event.target.files[0]
       if (file) {
-        console.log('Cover image file selected:', file.name, file.type, file.size)
         imageFile.value = file
         
         // Create a preview
         const reader = new FileReader()
         reader.onload = (e) => {
           salonForm.value.imageUrl = e.target.result
-          console.log('Cover image preview created')
         }
         reader.readAsDataURL(file)
       }
