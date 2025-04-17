@@ -7,6 +7,7 @@ import appointments from './modules/appointments'
 import clients from './modules/clients'
 import salon from './modules/salon'
 import publications from './modules/publications'
+import activity from './modules/activity'
 
 export default createStore({
   modules: {
@@ -16,6 +17,7 @@ export default createStore({
     appointments,
     clients,
     salon,
-    publications
+    publications,
+    activity
   }
 })

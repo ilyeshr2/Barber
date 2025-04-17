@@ -38,15 +38,41 @@ class ClientService {
         email: clientData.email,
         telephone: clientData.telephone,
         date_of_birth: clientData.dateNaissance,
-        gender: clientData.genre,
-        password: clientData.motDePasse
+        gender: clientData.genre
       };
       
+      // Only include password if provided
+      if (clientData.motDePasse) {
+        apiClientData.password = clientData.motDePasse;
+      }
+      
+      console.log('Creating client with data:', JSON.stringify(apiClientData, (key, value) => 
+        key === 'password' ? '[SECURED]' : value
+      ));
+      
       const response = await api.post('/admin/clients', apiClientData);
+      console.log('Client created successfully:', response.data);
       return response.data;
     } catch (error) {
       console.error('API Error:', error.response?.data || error);
-      throw new Error(error.response?.data?.message || 'Failed to create client');
+      
+      // Format error message based on server response
+      if (error.response?.data?.message) {
+        if (error.response.data.errors) {
+          // Format validation errors
+          const errorFields = error.response.data.errors.map(err => err.field).join(', ');
+          throw new Error(`${error.response.data.message}: ${errorFields}`);
+        } else if (error.response.data.field) {
+          // Format unique constraint errors
+          throw new Error(`${error.response.data.message}: ${error.response.data.field}`);
+        } else {
+          throw new Error(error.response.data.message);
+        }
+      } else if (error.message) {
+        throw new Error(error.message);
+      } else {
+        throw new Error('Failed to create client due to an unknown error');
+      }
     }
   }
   

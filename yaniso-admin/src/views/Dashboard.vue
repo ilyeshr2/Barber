@@ -127,13 +127,13 @@
                 <p class="text-muted mb-0">No recent activity</p>
               </div>
               <div v-else class="activity-list">
-                <div v-for="(activity, index) in recentActivity" :key="index" class="activity-item">
+                <div v-for="activity in recentActivity" :key="activity.id" class="activity-item">
                   <div class="activity-icon">
                     <i :class="activity.icon"></i>
                   </div>
                   <div class="activity-content">
                     <div class="activity-title">{{ activity.title }}</div>
-                    <div class="activity-time">{{ activity.time }}</div>
+                    <div class="activity-time">{{ activity.timeDisplay }}</div>
                   </div>
                 </div>
               </div>
@@ -351,36 +351,34 @@
         recentActivityError.value = null
         
         try {
-          // This could be a real API call in the future
-          // For now we'll use mock data
-          setTimeout(() => {
+          // Get activities from the store
+          await store.dispatch('activity/fetchRecentActivities', 5)
+          recentActivity.value = store.getters['activity/activities']
+          
+          // If no activities were found, provide some default/fallback data
+          if (recentActivity.value.length === 0) {
+            console.warn('No activities found in API, using fallback data')
+            // Keep this as fallback, only if the API returns nothing
             recentActivity.value = [
               { 
+                id: 'fallback-1',
                 icon: 'bi bi-calendar-plus', 
                 title: 'New appointment with Yaniso Rekik', 
-                time: '15 minutes ago' 
+                timeDisplay: '15 minutes ago' 
               },
               { 
+                id: 'fallback-2',
                 icon: 'bi bi-person-plus', 
                 title: 'New client registered', 
-                time: '2 hours ago' 
-              },
-              { 
-                icon: 'bi bi-scissors', 
-                title: 'Service "Coloring" price updated', 
-                time: 'Yesterday at 15:30' 
-              },
-              { 
-                icon: 'bi bi-calendar-x', 
-                title: 'Appointment cancelled', 
-                time: 'Yesterday at 12:15' 
+                timeDisplay: '2 hours ago' 
               }
             ]
-            recentActivityLoading.value = false
-          }, 1000)
+          }
         } catch (error) {
           console.error('Error loading recent activity:', error)
           recentActivityError.value = 'Unable to load recent activity'
+          recentActivity.value = [] // Set default empty array
+        } finally {
           recentActivityLoading.value = false
         }
       }

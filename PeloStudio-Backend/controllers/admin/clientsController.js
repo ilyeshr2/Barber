@@ -1,6 +1,13 @@
 const { User, Appointment, Service, Barber } = require('../../models');
 const { Op } = require('sequelize');
 
+// Debug log for User model
+console.log('User model details:', {
+    attributes: Object.keys(User.rawAttributes),
+    tableName: User.tableName,
+    modelName: User.name
+});
+
 exports.getAllClients = async (req, res) => {
     try {
         const clients = await User.findAll({
@@ -60,7 +67,14 @@ exports.getClientAppointments = async (req, res) => {
 
 exports.createClient = async (req, res) => {
     try {
-        const { first_name, last_name, email, telephone, date_of_birth, gender } = req.body;
+        console.log('Create client request body:', JSON.stringify(req.body, null, 2));
+        const { first_name, last_name, email, telephone, date_of_birth, gender, password } = req.body;
+
+        // Additional validation for required fields
+        if (!first_name || !last_name || !telephone || !date_of_birth || !gender) {
+            console.error('Missing required fields');
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
 
         // Check if phone number already exists
         const existingClient = await User.findOne({
@@ -73,35 +87,87 @@ exports.createClient = async (req, res) => {
             return res.status(400).json({ message: 'A client with this phone number already exists' });
         }
 
-        // Generate a random password for admin-created accounts
-        const tempPassword = Math.random().toString(36).slice(-8);
+        // Use password from frontend if provided, otherwise generate a random one
+        let clientPassword = password;
+        if (!clientPassword) {
+            clientPassword = Math.random().toString(36).slice(-8);
+        }
+        
+        console.log('Using password:', clientPassword ? '[PASSWORD PROVIDED]' : 'generated password');
+        
         const bcrypt = require('bcrypt');
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(tempPassword, salt);
+        const hashedPassword = await bcrypt.hash(clientPassword, salt);
 
-        const client = await User.create({
+        // Log the data we're trying to create (without sensitive info)
+        console.log('Creating user with data:', {
             first_name,
             last_name,
-            email,
+            email: email || null,
             telephone,
             date_of_birth,
             gender,
-            password_hash: hashedPassword,
             role: 'customer'
         });
 
-        // Return client without password
-        const createdClient = await User.findByPk(client.id, {
-            attributes: { exclude: ['password_hash'] }
-        });
+        try {
+            const client = await User.create({
+                first_name,
+                last_name,
+                email: email || null, // Handle empty email strings
+                telephone,
+                date_of_birth,
+                gender,
+                password_hash: hashedPassword,
+                role: 'customer'
+            });
 
-        res.status(201).json({
-            ...createdClient.toJSON(),
-            tempPassword // Include temporary password in response
-        });
+            console.log('User created successfully:', client.id);
+
+            // Return client without password
+            const createdClient = await User.findByPk(client.id, {
+                attributes: { exclude: ['password_hash'] }
+            });
+
+            const responseData = createdClient.toJSON();
+            
+            // Only include temporary password if we generated one
+            if (!password) {
+                responseData.tempPassword = clientPassword;
+            }
+
+            res.status(201).json(responseData);
+        } catch (innerError) {
+            console.error('Error creating user record:', innerError);
+            throw innerError;
+        }
     } catch (error) {
-        console.error('Error in createClient:', error);
-        res.status(500).json({ message: 'Server error' });
+        console.error('Error in createClient - Full details:', error);
+        console.error('Error stack:', error.stack);
+        
+        if (error.name === 'SequelizeValidationError') {
+            // Log validation errors
+            const validationErrors = error.errors.map(err => ({
+                field: err.path,
+                type: err.type,
+                message: err.message
+            }));
+            console.error('Validation errors:', JSON.stringify(validationErrors));
+            return res.status(400).json({ 
+                message: 'Validation error', 
+                errors: validationErrors 
+            });
+        }
+        
+        if (error.name === 'SequelizeUniqueConstraintError') {
+            console.error('Unique constraint error:', JSON.stringify(error.errors));
+            return res.status(400).json({ 
+                message: 'A user with this information already exists', 
+                field: error.errors[0].path 
+            });
+        }
+        
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
 
