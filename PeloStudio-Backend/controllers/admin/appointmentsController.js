@@ -1,5 +1,6 @@
 const { Appointment, User, Barber, Service } = require('../../models');
 const { Op } = require('sequelize');
+const activityController = require('./activityController');
 
 exports.getAllAppointments = async (req, res) => {
     try {
@@ -160,6 +161,10 @@ exports.createAppointment = async (req, res) => {
                 }
             ]
         });
+
+        // Log activity for appointment creation
+        await activityController.logAppointmentActivity(appointmentWithDetails, 'created', req.user?.id);
+
         res.status(201).json(appointmentWithDetails);
     } catch (error) {
         console.error('Error in createAppointment:', error);
@@ -177,6 +182,9 @@ exports.updateAppointmentStatus = async (req, res) => {
             return res.status(404).json({ message: 'Appointment not found' });
         }
 
+        // Store the old status for activity logging
+        const oldStatus = appointment.status;
+        
         appointment.status = status;
         await appointment.save();
 
@@ -196,6 +204,10 @@ exports.updateAppointmentStatus = async (req, res) => {
                 }
             ]
         });
+
+        // Log activity for appointment status update
+        await activityController.logAppointmentActivity(updatedAppointment, 'status_updated', req.user?.id);
+
         res.json(updatedAppointment);
     } catch (error) {
         console.error('Error in updateAppointmentStatus:', error);
@@ -206,12 +218,34 @@ exports.updateAppointmentStatus = async (req, res) => {
 exports.deleteAppointment = async (req, res) => {
     try {
         const { id } = req.params;
-        const appointment = await Appointment.findByPk(id);
+        const appointment = await Appointment.findByPk(id, {
+            include: [
+                {
+                    model: User,
+                    attributes: ['id', 'first_name', 'last_name', 'telephone']
+                },
+                {
+                    model: Barber,
+                    attributes: ['id', 'name']
+                },
+                {
+                    model: Service,
+                    attributes: ['id', 'name', 'duration', 'price']
+                }
+            ]
+        });
         if (!appointment) {
             return res.status(404).json({ message: 'Appointment not found' });
         }
 
+        // Store appointment data for activity logging
+        const appointmentData = appointment.toJSON();
+
         await appointment.destroy();
+
+        // Log activity for appointment deletion
+        await activityController.logAppointmentActivity(appointmentData, 'deleted', req.user?.id);
+
         res.json({ message: 'Appointment deleted successfully' });
     } catch (error) {
         console.error('Error in deleteAppointment:', error);

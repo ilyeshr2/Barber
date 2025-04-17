@@ -425,6 +425,60 @@ const ServiceBarber = sequelize.define('ServiceBarber', {
   ]
 });
 
+// After the other model definitions but before the associations
+const Activity = sequelize.define('Activity', {
+  id: {
+    type: Sequelize.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  type: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    comment: 'Type of activity (appointment, client, service, etc.)'
+  },
+  action: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    comment: 'Action performed (created, updated, deleted, etc.)'
+  },
+  entity_id: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    comment: 'ID of the entity this activity is related to'
+  },
+  user_id: {
+    type: Sequelize.INTEGER,
+    allowNull: true,
+    comment: 'ID of the user who performed this action (if applicable)'
+  },
+  title: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    comment: 'Human-readable title of the activity'
+  },
+  description: {
+    type: Sequelize.TEXT,
+    allowNull: true,
+    comment: 'Additional details about the activity'
+  },
+  metadata: {
+    type: Sequelize.JSON,
+    allowNull: true,
+    comment: 'Any additional data related to the activity'
+  },
+  icon: {
+    type: Sequelize.STRING,
+    allowNull: true,
+    comment: 'Icon class to represent this activity type'
+  }
+}, {
+  tableName: 'activities',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
+});
+
 // Define associations
 Salon.hasMany(BusinessHours, { foreignKey: 'salon_id' });
 BusinessHours.belongsTo(Salon, { foreignKey: 'salon_id' });
@@ -455,6 +509,10 @@ Appointment.belongsTo(Barber, { foreignKey: 'barber_id' });
 Service.hasMany(Appointment, { foreignKey: 'service_id' });
 Appointment.belongsTo(Service, { foreignKey: 'service_id' });
 
+// Add the association to User
+User.hasMany(Activity, { foreignKey: 'user_id', as: 'activities' });
+Activity.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
 // Add models to db object
 db.User = User;
 db.Salon = Salon;
@@ -467,6 +525,7 @@ db.Publication = Publication;
 db.AppSetting = AppSetting;
 db.FileStorage = FileStorage;
 db.ServiceBarber = ServiceBarber;
+db.Activity = Activity;
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;

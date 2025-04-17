@@ -351,12 +351,14 @@
         recentActivityError.value = null
         
         try {
+          console.log('Starting to load recent activities');
           // Get activities from the store
           await store.dispatch('activity/fetchRecentActivities', 5)
-          recentActivity.value = store.getters['activity/activities']
+          const activities = store.getters['activity/activities']
+          console.log('Activities returned from store:', activities.length);
           
           // If no activities were found, provide some default/fallback data
-          if (recentActivity.value.length === 0) {
+          if (activities.length === 0) {
             console.warn('No activities found in API, using fallback data')
             // Keep this as fallback, only if the API returns nothing
             recentActivity.value = [
@@ -373,11 +375,29 @@
                 timeDisplay: '2 hours ago' 
               }
             ]
+          } else {
+            recentActivity.value = activities
+            console.log('Setting real activity data:', activities.length, 'items');
           }
         } catch (error) {
           console.error('Error loading recent activity:', error)
           recentActivityError.value = 'Unable to load recent activity'
-          recentActivity.value = [] // Set default empty array
+          
+          // Provide fallback data even in case of error
+          recentActivity.value = [
+            { 
+              id: 'error-fallback-1',
+              icon: 'bi bi-calendar-plus', 
+              title: 'New appointment with Yaniso Rekik', 
+              timeDisplay: '15 minutes ago' 
+            },
+            { 
+              id: 'error-fallback-2',
+              icon: 'bi bi-person-plus', 
+              title: 'New client registered', 
+              timeDisplay: '2 hours ago' 
+            }
+          ]
         } finally {
           recentActivityLoading.value = false
         }

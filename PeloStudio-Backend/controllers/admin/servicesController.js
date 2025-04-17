@@ -1,4 +1,5 @@
 const { Service, Barber, ServiceBarber, sequelize } = require('../../models');
+const activityController = require('./activityController');
 
 exports.getAllServices = async (req, res) => {
     try {
@@ -117,6 +118,15 @@ exports.createService = async (req, res) => {
             is_active: completeService.is_active
         };
         
+        // Log activity for the new service
+        await activityController.logServiceActivity({
+            id: service.id,
+            name: service.name,
+            price: service.price,
+            duration: service.duration,
+            barber_id: service.barber_id
+        }, 'created', req.user?.id);
+        
         res.status(201).json(mappedService);
     } catch (error) {
         await transaction.rollback();
@@ -138,6 +148,15 @@ exports.updateService = async (req, res) => {
             await transaction.rollback();
             return res.status(404).json({ message: 'Service not found' });
         }
+        
+        // Store original service data for activity logging
+        const originalService = {
+            id: service.id,
+            name: service.name,
+            price: service.price,
+            duration: service.duration,
+            barber_id: service.barber_id
+        };
         
         // Update fields
         if (nom) service.name = nom;
@@ -204,6 +223,15 @@ exports.updateService = async (req, res) => {
             is_active: completeService.is_active
         };
         
+        // Log activity for service update
+        await activityController.logServiceActivity({
+            id: service.id,
+            name: service.name,
+            price: service.price,
+            duration: service.duration,
+            barber_id: service.barber_id
+        }, 'updated', req.user?.id);
+        
         res.status(200).json(mappedService);
     } catch (error) {
         await transaction.rollback();
@@ -224,6 +252,15 @@ exports.deleteService = async (req, res) => {
             return res.status(404).json({ message: 'Service not found' });
         }
         
+        // Store service data for activity logging
+        const serviceData = {
+            id: service.id,
+            name: service.name,
+            price: service.price,
+            duration: service.duration,
+            barber_id: service.barber_id
+        };
+        
         // Delete all associations first
         await ServiceBarber.destroy({ 
             where: { service_id: id },
@@ -234,6 +271,9 @@ exports.deleteService = async (req, res) => {
         await service.destroy({ transaction });
         
         await transaction.commit();
+        
+        // Log activity for service deletion
+        await activityController.logServiceActivity(serviceData, 'deleted', req.user?.id);
         
         res.status(200).json({ message: 'Service deleted successfully' });
     } catch (error) {

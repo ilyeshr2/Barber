@@ -1,5 +1,6 @@
 const { User, Appointment, Service, Barber } = require('../../models');
 const { Op } = require('sequelize');
+const activityController = require('./activityController');
 
 // Debug log for User model
 console.log('User model details:', {
@@ -124,6 +125,9 @@ exports.createClient = async (req, res) => {
 
             console.log('User created successfully:', client.id);
 
+            // Log activity for the new client
+            await activityController.logClientActivity(client, 'created', req.user?.id);
+
             // Return client without password
             const createdClient = await User.findByPk(client.id, {
                 attributes: { exclude: ['password_hash'] }
@@ -204,6 +208,9 @@ exports.updateClient = async (req, res) => {
 
         await client.save();
 
+        // Log activity for client update
+        await activityController.logClientActivity(client, 'updated', req.user?.id);
+
         // Return updated client without password
         const updatedClient = await User.findByPk(client.id, {
             attributes: { exclude: ['password_hash'] }
@@ -239,7 +246,20 @@ exports.deleteClient = async (req, res) => {
             });
         }
 
+        // Store client data for the activity log
+        const clientData = {
+            id: client.id,
+            first_name: client.first_name,
+            last_name: client.last_name,
+            email: client.email,
+            telephone: client.telephone
+        };
+
         await client.destroy();
+
+        // Log activity for client deletion
+        await activityController.logClientActivity(clientData, 'deleted', req.user?.id);
+
         res.json({ message: 'Client deleted successfully' });
     } catch (error) {
         console.error('Error in deleteClient:', error);

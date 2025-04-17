@@ -36,6 +36,7 @@ const adminSalonController = require('./controllers/admin/salonController');
 const adminPublicationsController = require('./controllers/admin/publicationsController');
 const adminSettingsController = require('./controllers/admin/settingsController');
 const adminMigrationController = require('./controllers/admin/migrationController');
+const adminActivityController = require('./controllers/admin/activityController');
 
 // Import middleware
 const { authenticateToken, isAdmin } = require('./middlewares/authMiddleware');
@@ -44,6 +45,7 @@ const { authenticateToken, isAdmin } = require('./middlewares/authMiddleware');
 const fileStorageRoutes = require('./routes/admin/fileStorageRoutes');
 const migrationRoutes = require('./routes/admin/migrationRoutes');
 const salonRoutes = require('./routes/admin/salonRoutes');
+const activityRoutes = require('./routes/admin/activityRoutes');
 
 // Apply both auth and admin middleware to all routes
 router.use(authenticateToken);
@@ -53,6 +55,7 @@ router.use(isAdmin);
 router.use('/files', fileStorageRoutes);
 router.use('/migrations', migrationRoutes);
 router.use('/salon', salonRoutes);
+router.use('/activities', activityRoutes);
 
 // Admin Auth
 router.get('/profile', adminAuthController.getProfile);
