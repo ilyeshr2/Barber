@@ -80,7 +80,7 @@
       <GridLayout row="2" rows="auto, auto" class="sticky-footer">
         <StackLayout row="0" class="gradient-transition"></StackLayout>
         <StackLayout row="1" class="footer-content">
-          <Button text="Enregistrer" @tap="enregistrer" class="btn-save" :isEnabled="!isSaving" />
+          <Button text="Enregistrer" @tap="enregistrer" class="btn-save" :enabled="!isSaving" />
           <ActivityIndicator v-if="isSaving" busy="true" color="#ffcd50" />
           <Label text="Supprimer mon compte" @tap="supprimerCompte" class="delete-account" />
         </StackLayout>

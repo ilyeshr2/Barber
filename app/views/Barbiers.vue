@@ -1,4 +1,3 @@
-
 <!-- app/views/Barbiers.vue (Updated for Dynamic Data) -->
 <template>
   <Page actionBarHidden="true">
@@ -118,7 +117,9 @@ export default {
       this.error = null;
 
       try {
-        this.barbiers = await barbierService.getAllBarbers();
+        const barbers = await barbierService.getAllBarbers();
+        console.log('Response from barbers API:', JSON.stringify(barbers));
+        this.barbiers = barbers;
       } catch (error) {
         console.error('Error loading barbers:', error);
         this.error = 'Unable to load barbers. Please check your connection and try again.';
@@ -150,15 +151,23 @@ export default {
 
     voirDetailsBarbier(barbier) {
       this.$navigateTo(require('./DetailsBarbier').default, {
-        props: { barbierId: barbier.id }
+        props: { 
+          barbierId: barbier.id,
+          barbierInfo: barbier 
+        }
       });
     },
 
     getBarbierImage(barbier) {
-      // Fallback to default image if photoUrl is missing or invalid
-      if (!barbier.photoUrl || barbier.photoUrl.includes('imgur')) {
-        return `~/assets/images/barber-${barbier.id % 3 + 1}.jpg`;
+      if (!barbier || !barbier.photoUrl) {
+        return '~/assets/images/barber-1.jpg';
       }
+      
+      // If photoUrl starts with /, add the server URL
+      if (barbier.photoUrl.startsWith('/')) {
+        return `http://10.0.2.2:3000${barbier.photoUrl}`;
+      }
+      
       return barbier.photoUrl;
     },
 

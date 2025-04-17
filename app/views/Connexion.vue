@@ -46,7 +46,7 @@
       <Label text="Continuer sans connexion" class="skip-login" @tap="continuerSansConnexion" />
   
       <!-- Login button -->
-      <Button text="Se connecter" @tap="connexion" class="login-button" :isEnabled="!isLoading" />
+      <Button text="Se connecter" @tap="connexion" class="login-button" :enabled="!isLoading" />
       
       <!-- Loading indicator -->
       <ActivityIndicator v-if="isLoading" busy="true" color="#fecc4f" class="loading-indicator" />

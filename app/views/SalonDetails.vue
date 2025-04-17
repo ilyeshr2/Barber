@@ -9,38 +9,38 @@
         
         <!-- Content -->
         <ScrollView row="1">
-          <StackLayout class="salon-container">
+          <StackLayout class="salon-container" v-if="!loading">
             <!-- Salon Image -->
-            <Image :src="salonInfo.imageUrl || '~/assets/images/salon.jpg'" class="salon-image" stretch="aspectFill" />
+            <Image :src="salon.imageUrl || '~/assets/images/salon.jpg'" class="salon-image" stretch="aspectFill" />
             
             <!-- Salon Name -->
-            <Label :text="salonInfo.name || 'Yaniso Studio'" class="salon-title" />
+            <Label :text="salon.name" class="salon-title" />
             
             <!-- Address with map link -->
             <GridLayout columns="auto, *" class="info-item" @tap="openMap">
               <Label text="📍" class="info-icon" col="0" />
-              <Label :text="salonInfo.address" class="info-text" col="1" textWrap="true" />
+              <Label :text="salon.address" class="info-text" col="1" textWrap="true" />
             </GridLayout>
             
             <!-- Phone -->
             <GridLayout columns="auto, *" class="info-item" @tap="callSalon">
               <Label text="📞" class="info-icon" col="0" />
-              <Label :text="salonInfo.phone || '+1 555-555-5555'" class="info-text" col="1" />
+              <Label :text="salon.phone" class="info-text" col="1" />
             </GridLayout>
             
             <!-- Email -->
             <GridLayout columns="auto, *" class="info-item" @tap="emailSalon">
               <Label text="✉️" class="info-icon" col="0" />
-              <Label :text="salonInfo.email || 'contact@yanisostudio.com'" class="info-text" col="1" />
+              <Label :text="salon.email" class="info-text" col="1" />
             </GridLayout>
             
             <!-- Hours -->
             <StackLayout class="hours-container">
               <Label text="Heures d'ouverture" class="section-title" />
-              <StackLayout v-for="(hours, day) in businessHours" :key="day" class="hours-row">
+              <StackLayout v-for="day in formattedBusinessHours" :key="day.dayName" class="hours-row">
                 <GridLayout columns="*, *">
-                  <Label :text="day" class="day-name" col="0" />
-                  <Label :text="hours" class="hours-text" col="1" />
+                  <Label :text="day.dayName" class="day-name" col="0" />
+                  <Label :text="day.hours" class="hours-text" col="1" />
                 </GridLayout>
               </StackLayout>
             </StackLayout>
@@ -48,21 +48,34 @@
             <!-- Description -->
             <StackLayout class="description-container">
               <Label text="À propos" class="section-title" />
-              <Label :text="salonInfo.description || 'Yaniso Studio est votre barbier de confiance à Montréal, offrant des services de coiffure et de rasage de haute qualité dans une ambiance chaleureuse et professionnelle.'" class="description-text" textWrap="true" />
+              <Label :text="salon.description" class="description-text" textWrap="true" />
             </StackLayout>
             
             <!-- Social Media -->
             <StackLayout class="social-container">
               <Label text="Suivez-nous" class="section-title" />
-              <GridLayout columns="*, *, *" class="social-icons">
-                <Image src="~/assets/images/facebook-icon.png" class="social-icon" col="0" @tap="openSocial('facebook')" />
-                <Image src="~/assets/images/instagram-icon.png" class="social-icon" col="1" @tap="openSocial('instagram')" />
-                <Image src="~/assets/images/tiktok-icon.png" class="social-icon" col="2" @tap="openSocial('tiktok')" />
+              <GridLayout :columns="socialLinksGridColumns" class="social-icons">
+                <Image 
+                  v-for="(link, index) in salon.socialLinks" 
+                  :key="link.platform"
+                  :src="getSocialIcon(link.platform)" 
+                  class="social-icon" 
+                  :col="index" 
+                  @tap="openSocialLink(link)" />
               </GridLayout>
             </StackLayout>
             
             <!-- Take Appointment Button -->
             <Button text="Prendre Rendez-vous" class="appointment-button" @tap="takeAppointment" />
+          </StackLayout>
+
+          <!-- Loading state -->
+          <ActivityIndicator v-if="loading" busy="true" color="#ffcc33" class="loading" />
+          
+          <!-- Error state -->
+          <StackLayout v-if="error" class="error-container">
+            <Label text="Impossible de charger les informations du salon" class="error-text" />
+            <Button text="Réessayer" @tap="loadSalonDetails" class="retry-button" />
           </StackLayout>
         </ScrollView>
       </GridLayout>
@@ -70,25 +83,60 @@
   </template>
   
   <script>
-  import { openUrl } from '@nativescript/core/utils/utils';
+  import { openUrl } from '@nativescript/core/utils';
+  import { salonService } from '../services/api';
   
   export default {
-    props: {
-      salonInfo: {
-        type: Object,
-        default: () => ({
+    data() {
+      return {
+        salon: {
           id: 1,
           name: 'Yaniso Studio',
           address: 'Rue Jean-Talon E, Montréal',
           phone: '+1 555-555-5555',
           email: 'contact@yanisostudio.com',
-          description: 'Votre barbier de confiance à Montréal'
-        })
-      }
+          description: 'Votre barbier de confiance à Montréal',
+          businessHours: [],
+          socialLinks: [],
+          imageUrl: '~/assets/images/salon.jpg'
+        },
+        loading: true,
+        error: null
+      };
     },
-    data() {
-      return {
-        businessHours: {
+    computed: {
+      formattedBusinessHours() {
+        if (this.salon.businessHours && this.salon.businessHours.length > 0) {
+          const dayNames = {
+            0: 'Dimanche',
+            1: 'Lundi',
+            2: 'Mardi',
+            3: 'Mercredi',
+            4: 'Jeudi',
+            5: 'Vendredi',
+            6: 'Samedi'
+          };
+          
+          return this.salon.businessHours.map(day => {
+            const dayName = dayNames[day.dayOfWeek];
+            let hours = 'Fermé';
+            
+            if (day.isOpen) {
+              const openTime = day.openTime || '09:00';
+              const closeTime = day.closeTime || '18:00';
+              hours = `${openTime} - ${closeTime}`;
+            }
+            
+            return { dayName, hours };
+          }).sort((a, b) => {
+            // Sort days of week starting with Monday (1)
+            const dayOrder = { 'Lundi': 1, 'Mardi': 2, 'Mercredi': 3, 'Jeudi': 4, 'Vendredi': 5, 'Samedi': 6, 'Dimanche': 0 };
+            return dayOrder[a.dayName] - dayOrder[b.dayName];
+          });
+        }
+        
+        // Default business hours if none are available from API
+        const defaultHours = {
           'Lundi': '9:00 - 18:00',
           'Mardi': '9:00 - 18:00',
           'Mercredi': '9:00 - 18:00',
@@ -96,32 +144,76 @@
           'Vendredi': '9:00 - 18:00',
           'Samedi': '10:00 - 17:00',
           'Dimanche': 'Fermé'
-        }
-      };
+        };
+        
+        return Object.entries(defaultHours).map(([dayName, hours]) => {
+          return { dayName, hours };
+        });
+      },
+      socialLinksGridColumns() {
+        // Create a grid with equal width columns based on number of social links
+        const count = Math.max((this.salon.socialLinks && this.salon.socialLinks.length) || 1, 1);
+        return Array(count).fill('*').join(', ');
+      }
+    },
+    mounted() {
+      this.loadSalonDetails();
     },
     methods: {
+      async loadSalonDetails() {
+        this.loading = true;
+        this.error = null;
+        
+        try {
+          const salonData = await salonService.getSalonInfo();
+          if (salonData) {
+            this.salon = salonData;
+            
+            // Ensure socialLinks is always an array
+            if (!this.salon.socialLinks) {
+              this.salon.socialLinks = [
+                { platform: 'facebook', url: 'https://www.facebook.com/yanisostudio' },
+                { platform: 'instagram', url: 'https://www.instagram.com/yanisostudio' },
+                { platform: 'tiktok', url: 'https://www.tiktok.com/@yanisostudio' }
+              ];
+            }
+          }
+        } catch (error) {
+          console.error('Error loading salon details:', error);
+          this.error = 'Failed to load salon details';
+        } finally {
+          this.loading = false;
+        }
+      },
       goBack() {
         this.$navigateBack();
       },
       openMap() {
-        const address = encodeURIComponent(this.salonInfo.address);
+        const address = encodeURIComponent(this.salon.address);
         openUrl(`https://maps.google.com/?q=${address}`);
       },
       callSalon() {
-        const phone = this.salonInfo.phone || '+15555555555';
-        openUrl(`tel:${phone.replace(/\s+/g, '')}`);
+        const phone = this.salon.phone.replace(/\s+/g, '');
+        openUrl(`tel:${phone}`);
       },
       emailSalon() {
-        const email = this.salonInfo.email || 'contact@yanisostudio.com';
-        openUrl(`mailto:${email}`);
+        openUrl(`mailto:${this.salon.email}`);
       },
-      openSocial(platform) {
-        const urls = {
-          facebook: 'https://www.facebook.com/yanisostudio',
-          instagram: 'https://www.instagram.com/yanisostudio',
-          tiktok: 'https://www.tiktok.com/@yanisostudio'
+      getSocialIcon(platform) {
+        const icons = {
+          facebook: '~/assets/images/facebook-icon.png',
+          instagram: '~/assets/images/instagram-icon.png',
+          tiktok: '~/assets/images/tiktok-icon.png',
+          twitter: '~/assets/images/twitter-icon.png',
+          youtube: '~/assets/images/youtube-icon.png'
         };
-        openUrl(urls[platform]);
+        
+        return icons[platform] || icons.facebook;
+      },
+      openSocialLink(link) {
+        if (link && link.url) {
+          openUrl(link.url);
+        }
       },
       takeAppointment() {
         this.$navigateTo(require('./Barbiers').default);
@@ -247,5 +339,31 @@
     border-radius: 25;
     height: 50;
     margin: 20;
+  }
+  
+  .loading {
+    margin-top: 100;
+  }
+  
+  .error-container {
+    margin-top: 100;
+    padding: 20;
+  }
+  
+  .error-text {
+    color: #ff6b6b;
+    font-size: 18;
+    text-align: center;
+    margin-bottom: 20;
+  }
+  
+  .retry-button {
+    background-color: #ffcc33;
+    color: #000000;
+    font-size: 16;
+    border-radius: 20;
+    width: 150;
+    height: 40;
+    margin: 0 auto;
   }
   </style>

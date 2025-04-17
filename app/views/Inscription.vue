@@ -92,7 +92,7 @@
       <GridLayout row="2" rows="auto, auto" class="sticky-footer">
         <StackLayout row="0" class="gradient-transition"></StackLayout>
         <StackLayout row="1" class="footer-content">
-          <Button text="S'inscrire" @tap="inscription" class="btn-inscription" :isEnabled="!isLoading" />
+          <Button text="S'inscrire" @tap="inscription" class="btn-inscription" :enabled="!isLoading" />
           <ActivityIndicator v-if="isLoading" busy="true" color="#ffcd50" />
         </StackLayout>
       </GridLayout>
