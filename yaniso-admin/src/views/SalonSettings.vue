@@ -256,6 +256,7 @@ import { useStore } from 'vuex'
 import Loader from '@/components/common/Loader.vue'
 import { notify } from '@/utils/notification'
 import { formatImageUrl } from '@/utils/imageHelpers'
+import SalonService from '@/services/salon.service'
 
 export default {
   name: 'SalonSettings',
@@ -425,9 +426,39 @@ export default {
       savingSocial.value = true
       
       try {
-        await store.dispatch('salon/updateSalonInfo', {
-          socialLinks: socialLinks.value
-        })
+        console.log('Updating social links with:', JSON.stringify(socialLinks.value));
+        
+        // Make sure we have all platforms even if empty
+        const completeLinks = {
+          facebook: socialLinks.value.facebook || '',
+          instagram: socialLinks.value.instagram || '',
+          tiktok: socialLinks.value.tiktok || '',
+          ...socialLinks.value
+        };
+        
+        console.log('Complete social links:', JSON.stringify(completeLinks));
+        
+        // Use the imported SalonService directly, no need to instantiate it
+        const response = await SalonService.updateSocialLinksDirectly(completeLinks);
+        
+        console.log('Response after updating social links directly:', response);
+        
+        // If the social links are returned in the response, update the local state
+        if (response && response.socialLinks) {
+          console.log('Updating local social links from response:', response.socialLinks);
+          socialLinks.value = { ...response.socialLinks };
+          
+          // Also update the store state
+          store.commit('salon/SET_SALON_INFO', {
+            ...store.getters['salon/salonInfo'],
+            socialLinks: response.socialLinks
+          });
+        } else {
+          console.warn('No social links returned in response!');
+          // Refresh salon info to get updated social links
+          await loadSalonInfo();
+        }
+        
         notify.success('Liens des réseaux sociaux mis à jour avec succès')
       } catch (error) {
         console.error('Error updating social links:', error)

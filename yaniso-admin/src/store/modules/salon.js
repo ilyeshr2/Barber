@@ -7,7 +7,8 @@ export default {
     salonInfo: null,
     businessHours: [],
     loading: false,
-    error: null
+    error: null,
+    socialLinks: []
   },
   getters: {
     salonInfo: state => state.salonInfo,
@@ -24,6 +25,17 @@ export default {
     },
     SET_SALON_INFO(state, salonInfo) {
       state.salonInfo = salonInfo
+      
+      // Extract social links if available and store separately for easier access
+      if (salonInfo && salonInfo.socialLinks) {
+        console.log('Social links found in salon info, storing separately:', salonInfo.socialLinks);
+        state.socialLinks = salonInfo.socialLinks;
+      }
+      
+      // Extract business hours if available
+      if (salonInfo && salonInfo.businessHours && Array.isArray(salonInfo.businessHours)) {
+        state.businessHours = salonInfo.businessHours
+      }
     },
     SET_BUSINESS_HOURS(state, businessHours) {
       state.businessHours = businessHours

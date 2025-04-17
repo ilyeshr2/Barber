@@ -121,6 +121,7 @@
   import { Modal } from 'bootstrap'
   import ServiceForm from '@/components/services/ServiceForm.vue'
   import ConfirmModal from '@/components/common/ConfirmModal.vue'
+  import SalonService from '@/services/salon.service'
   
   export default {
     name: 'ServicesView',

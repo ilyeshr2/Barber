@@ -43,6 +43,7 @@ const { authenticateToken, isAdmin } = require('./middlewares/authMiddleware');
 // Import sub-routes
 const fileStorageRoutes = require('./routes/admin/fileStorageRoutes');
 const migrationRoutes = require('./routes/admin/migrationRoutes');
+const salonRoutes = require('./routes/admin/salonRoutes');
 
 // Apply both auth and admin middleware to all routes
 router.use(authenticateToken);
@@ -51,6 +52,7 @@ router.use(isAdmin);
 // Use sub-routes
 router.use('/files', fileStorageRoutes);
 router.use('/migrations', migrationRoutes);
+router.use('/salon', salonRoutes);
 
 // Admin Auth
 router.get('/profile', adminAuthController.getProfile);
