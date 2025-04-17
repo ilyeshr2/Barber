@@ -389,6 +389,42 @@ const FileStorage = sequelize.define('FileStorage', {
   updatedAt: 'updated_at'
 });
 
+// Define ServiceBarber junction model
+const ServiceBarber = sequelize.define('ServiceBarber', {
+  id: {
+    type: Sequelize.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  service_id: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'Services',
+      key: 'id'
+    }
+  },
+  barber_id: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'Barbers',
+      key: 'id'
+    }
+  }
+}, {
+  tableName: 'ServiceBarbers',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+  indexes: [
+    {
+      unique: true,
+      fields: ['service_id', 'barber_id']
+    }
+  ]
+});
+
 // Define associations
 Salon.hasMany(BusinessHours, { foreignKey: 'salon_id' });
 BusinessHours.belongsTo(Salon, { foreignKey: 'salon_id' });
@@ -402,6 +438,11 @@ Barber.belongsTo(Salon, { foreignKey: 'salon_id' });
 User.hasOne(Barber, { foreignKey: 'user_id' });
 Barber.belongsTo(User, { foreignKey: 'user_id' });
 
+// Update to many-to-many relationship
+Barber.belongsToMany(Service, { through: ServiceBarber, foreignKey: 'barber_id', otherKey: 'service_id' });
+Service.belongsToMany(Barber, { through: ServiceBarber, foreignKey: 'service_id', otherKey: 'barber_id' });
+
+// Keep the original associations for backward compatibility
 Barber.hasMany(Service, { foreignKey: 'barber_id' });
 Service.belongsTo(Barber, { foreignKey: 'barber_id' });
 
@@ -425,6 +466,7 @@ db.Appointment = Appointment;
 db.Publication = Publication;
 db.AppSetting = AppSetting;
 db.FileStorage = FileStorage;
+db.ServiceBarber = ServiceBarber;
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;

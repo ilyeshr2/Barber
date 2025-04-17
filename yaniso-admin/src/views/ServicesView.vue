@@ -38,7 +38,7 @@
                 <th>Nom</th>
                 <th>Durée (min)</th>
                 <th>Prix (CAD)</th>
-                <th>Barbier</th>
+                <th>Barbiers</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -46,8 +46,25 @@
               <tr v-for="service in filteredServices" :key="service.id">
                 <td>{{ service.nom }}</td>
                 <td>{{ service.duree }}</td>
-                <td>{{ service.prix }}</td>
-                <td>{{ getBarbierName(service.BarberId) }}</td>
+                <td>{{ service.prix }} CAD</td>
+                <td>
+                  <div v-if="service.BarberIds && service.BarberIds.length > 0" class="dropdown">
+                    <button class="btn btn-sm btn-info dropdown-toggle" type="button" :id="`barberDropdown-${service.id}`" data-bs-toggle="dropdown" aria-expanded="false">
+                      {{ service.BarberIds.length }} Barbier(s)
+                    </button>
+                    <ul class="dropdown-menu" :aria-labelledby="`barberDropdown-${service.id}`">
+                      <li v-for="barberId in service.BarberIds" :key="barberId">
+                        <span class="dropdown-item">{{ getBarbierName(barberId) }}</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <div v-else-if="service.BarberId">
+                    <span class="badge bg-info text-dark">
+                      {{ getBarbierName(service.BarberId) }}
+                    </span>
+                  </div>
+                  <span v-else class="text-muted">Non assigné</span>
+                </td>
                 <td>
                   <button class="btn btn-sm btn-outline-secondary me-1" @click="editService(service)">
                     <i class="bi bi-pencil"></i>
@@ -129,7 +146,7 @@
         if (!selectedBarbierId.value) {
           return services.value
         }
-        return services.value.filter(service => service.BarberId === parseInt(selectedBarbierId.value))
+        return services.value.filter(service => service.BarberIds && service.BarberIds.includes(parseInt(selectedBarbierId.value)))
       })
       
       onMounted(async () => {
@@ -143,7 +160,7 @@
           nom: '',
           duree: 30,
           prix: 500,
-          BarberId: barbiers.value.length > 0 ? barbiers.value[0].id : null
+          BarberIds: barbiers.value.length > 0 ? [barbiers.value[0].id] : []
         }
         
         const modal = new Modal(serviceModal.value)
@@ -224,3 +241,18 @@
     }
   }
   </script>
+
+<style scoped>
+.barber-badge {
+  display: inline-block;
+}
+
+.badge {
+  font-size: 0.8rem;
+  font-weight: normal;
+}
+
+.table td {
+  vertical-align: middle;
+}
+</style>

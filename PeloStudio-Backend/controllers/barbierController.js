@@ -1,5 +1,5 @@
 // controllers/barbierController.js
-const { Barber, Service } = require('../models');
+const { Barber, Service, ServiceBarber, Appointment } = require('../models');
 const { Op } = require('sequelize');
 
 // Get all barbers
@@ -30,7 +30,7 @@ exports.getAllBarbers = async (req, res) => {
 exports.getBarberById = async (req, res) => {
   try {
     const barber = await Barber.findByPk(req.params.id, {
-      include: [Service]
+      include: [{ model: Service, through: { attributes: [] } }]
     });
     
     if (!barber) {
@@ -57,16 +57,31 @@ exports.getBarberById = async (req, res) => {
   }
 };
 
-// Get barber services
+// Get barber services - Updated to use the many-to-many relationship
 exports.getBarberServices = async (req, res) => {
   try {
-    const services = await Service.findAll({
-      where: { barber_id: req.params.id }
+    console.log(`Fetching services for barber ID: ${req.params.id}`);
+    
+    // Get the barber with their services through the many-to-many relationship
+    const barber = await Barber.findByPk(req.params.id, {
+      include: [{ 
+        model: Service, 
+        through: { attributes: [] },  // Don't include junction table data
+        attributes: ['id', 'name', 'description', 'duration', 'price', 'is_active', 'created_at', 'updated_at']
+      }]
     });
     
-    res.status(200).json(services);
+    if (!barber) {
+      console.log(`Barber with ID ${req.params.id} not found`);
+      return res.status(404).json({ message: 'Barber not found' });
+    }
+    
+    console.log(`Found ${barber.Services ? barber.Services.length : 0} services for barber ID: ${req.params.id}`);
+    
+    // Extract and return the services
+    res.status(200).json(barber.Services || []);
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching barber services:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -158,8 +173,10 @@ exports.deleteBarber = async (req, res) => {
     }
 
     // Check if barber has any upcoming appointments
-    const hasAppointments = await barber.countAppointments({
+    // Use direct query instead of association method
+    const appointmentCount = await Appointment.count({
       where: {
+        barber_id: id,
         appointment_date: {
           [Op.gt]: new Date()
         },
@@ -167,7 +184,7 @@ exports.deleteBarber = async (req, res) => {
       }
     });
 
-    if (hasAppointments > 0) {
+    if (appointmentCount > 0) {
       return res.status(400).json({ 
         message: 'Cannot delete barber with upcoming appointments. Please cancel or reassign appointments first.' 
       });

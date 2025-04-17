@@ -37,25 +37,48 @@
     </div>
     
     <div class="mb-3">
-      <label for="BarberId" class="form-label">Barbier</label>
-      <select 
-        class="form-select" 
-        id="BarberId" 
-        v-model.number="formData.BarberId"
-        required
-      >
-        <option value="">Sélectionner un barbier</option>
-        <option v-for="barbier in filteredBarbiers" :key="barbier.id" :value="barbier.id">
-          {{ barbier.nom }}
-        </option>
-      </select>
+      <label class="form-label">Barbiers</label>
+      <div class="card">
+        <div class="card-body">
+          <div v-if="filteredBarbiers.length === 0" class="text-muted">
+            Aucun barbier disponible
+          </div>
+          <div v-else>
+            <div class="mb-2">
+              <button type="button" class="btn btn-sm btn-outline-primary" @click="selectAllBarbiers">
+                Sélectionner tous
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary ms-2" @click="clearBarbierSelection">
+                Désélectionner tous
+              </button>
+            </div>
+            <div class="barber-select-container">
+              <div v-for="barbier in filteredBarbiers" :key="barbier.id" class="form-check mb-2">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  :id="`barbier-${barbier.id}`" 
+                  v-model="formData.BarberIds" 
+                  :value="barbier.id"
+                >
+                <label class="form-check-label" :for="`barbier-${barbier.id}`">
+                  {{ barbier.nom }}
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="text-danger mt-1" v-if="formData.BarberIds.length === 0">
+        Veuillez sélectionner au moins un barbier
+      </div>
     </div>
     
     <div class="d-flex justify-content-end">
       <button type="button" class="btn btn-secondary me-2" @click="$emit('cancel')">
         Annuler
       </button>
-      <button type="submit" class="btn btn-primary">
+      <button type="submit" class="btn btn-primary" :disabled="formData.BarberIds.length === 0">
         {{ isEditing ? 'Mettre à jour' : 'Ajouter' }}
       </button>
     </div>
@@ -74,7 +97,7 @@ export default {
         nom: '',
         duree: 30,
         prix: 500,
-        BarberId: null
+        BarberIds: []
       })
     },
     barbiers: {
@@ -92,7 +115,7 @@ export default {
       nom: '',
       duree: 30,
       prix: 500,
-      BarberId: null
+      BarberIds: []
     })
     
     // Filter out null or invalid barbiers
@@ -103,26 +126,55 @@ export default {
     // Update form data when service prop changes
     watch(() => props.service, (newService) => {
       if (newService) {
-        formData.value = { ...newService }
+        // If editing a service that has only BarberId but not BarberIds,
+        // create BarberIds from the single BarberId
+        const barberIds = newService.BarberIds || (newService.BarberId ? [newService.BarberId] : []);
+        
+        formData.value = { 
+          ...newService,
+          BarberIds: barberIds
+        }
       }
     }, { immediate: true })
     
-    // Set first available barbier if none selected and we have barbiers
-    watch(() => filteredBarbiers.value, (newBarbiers) => {
-      if (!formData.value.BarberId && newBarbiers.length > 0) {
-        formData.value.BarberId = newBarbiers[0].id
-      }
-    }, { immediate: true })
+    const selectAllBarbiers = () => {
+      formData.value.BarberIds = filteredBarbiers.value.map(b => b.id);
+    }
+    
+    const clearBarbierSelection = () => {
+      formData.value.BarberIds = [];
+    }
     
     const handleSubmit = () => {
-      emit('submit', { ...formData.value })
+      if (formData.value.BarberIds.length === 0) {
+        return; // Don't submit if no barbers selected
+      }
+      
+      // For backward compatibility, also set BarberId to the first selected barber
+      // This will be phased out as the backend supports multiple barbers
+      const dataToSubmit = { 
+        ...formData.value,
+        BarberId: formData.value.BarberIds[0] 
+      };
+      
+      emit('submit', dataToSubmit)
     }
     
     return {
       formData,
       filteredBarbiers,
+      selectAllBarbiers,
+      clearBarbierSelection,
       handleSubmit
     }
   }
 }
 </script>
+
+<style scoped>
+.barber-select-container {
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+</style>
