@@ -25,7 +25,7 @@
     </div>
     
     <div class="mb-3">
-      <label for="prix" class="form-label">Prix (DA)</label>
+      <label for="prix" class="form-label">Prix (CAD)</label>
       <input 
         type="number" 
         class="form-control" 

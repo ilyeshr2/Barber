@@ -247,6 +247,22 @@ export default {
       } finally {
         commit('SET_LOADING', false)
       }
+    },
+    
+    async updateAppointmentStatus({ commit }, { id, status }) {
+      commit('SET_LOADING', true)
+      commit('SET_ERROR', null)
+      
+      try {
+        const appointment = await AppointmentService.updateAppointmentStatus(id, status)
+        commit('UPDATE_APPOINTMENT', appointment)
+        return appointment
+      } catch (error) {
+        commit('SET_ERROR', error.message)
+        throw error
+      } finally {
+        commit('SET_LOADING', false)
+      }
     }
   }
 }

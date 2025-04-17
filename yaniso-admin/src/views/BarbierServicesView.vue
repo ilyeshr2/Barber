@@ -92,7 +92,7 @@
                   <tr>
                     <th>Name</th>
                     <th>Duration (min)</th>
-                    <th>Price (DA)</th>
+                    <th>Price (CAD)</th>
                     <th>Actions</th>
                   </tr>
                 </thead>

@@ -61,7 +61,7 @@
                         <span class="fw-bold">{{ service.nom }}</span>
                         <small class="d-block text-muted">{{ service.duree }} min</small>
                       </div>
-                      <span class="badge bg-primary rounded-pill">{{ service.prix }} DA</span>
+                      <span class="badge bg-primary rounded-pill">{{ service.prix }} CAD</span>
                     </li>
                   </ul>
                 </div>

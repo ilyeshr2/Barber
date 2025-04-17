@@ -207,6 +207,7 @@
                         <th>Service</th>
                         <th>Status</th>
                         <th>Price</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -224,7 +225,12 @@
                             {{ appointment.statut }}
                           </span>
                         </td>
-                        <td>{{ getServicePrice(appointment.ServiceId) }} DA</td>
+                        <td>{{ getServicePrice(appointment.ServiceId) }} CAD</td>
+                        <td>
+                          <button class="btn btn-sm btn-outline-primary" @click="updateAppointmentStatus(appointment)">
+                            <i class="bi bi-pencil-fill"></i>
+                          </button>
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -250,6 +256,45 @@
         confirm-button-variant="danger"
         @confirm="deleteClient"
       />
+      
+      <!-- Status Update Modal -->
+      <div class="modal fade" id="statusUpdateModal" tabindex="-1" aria-hidden="true" ref="statusUpdateModal">
+        <div class="modal-dialog modal-sm">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Update Appointment Status</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <form @submit.prevent="saveAppointmentStatus">
+                <div class="mb-3">
+                  <label for="appointmentStatus" class="form-label">Status</label>
+                  <select 
+                    class="form-select" 
+                    id="appointmentStatus" 
+                    v-model="appointmentStatusForm.statut"
+                    required
+                  >
+                    <option value="confirmé">Confirmed</option>
+                    <option value="annulé">Cancelled</option>
+                    <option value="terminé">Completed</option>
+                  </select>
+                </div>
+                
+                <div class="d-grid gap-2">
+                  <button type="submit" class="btn btn-primary" :disabled="updatingStatus">
+                    <span v-if="updatingStatus" class="spinner-border spinner-border-sm me-1"></span>
+                    Update Status
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" @click="closeStatusUpdateModal">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </template>
   
@@ -275,6 +320,7 @@
       const clientModal = ref(null)
       const appointmentsModal = ref(null)
       const deleteModal = ref(null)
+      const statusUpdateModal = ref(null)
       const searchQuery = ref('')
       const selectedClient = ref(null)
       const clientToDelete = ref(null)
@@ -283,6 +329,11 @@
       const loadingAppointments = ref(false)
       const appointmentsError = ref(null)
       const clientAppointments = ref([])
+      const appointmentStatusForm = ref({
+        statut: 'confirmé',
+        appointmentId: null
+      })
+      const updatingStatus = ref(false)
       
       const clientForm = ref({
         prenom: '',
@@ -456,8 +507,8 @@
         
         // Navigate to appointments page with client pre-selected
         router.push({
-          path: '/appointments/new',
-          query: { clientId: selectedClient.value.id }
+          path: '/appointments',
+          query: { clientId: selectedClient.value.id, action: 'new' }
         })
       }
       
@@ -493,6 +544,44 @@
         }
       }
       
+      const updateAppointmentStatus = (appointment) => {
+        // Set the current appointment status form data
+        appointmentStatusForm.value = {
+          statut: appointment.statut,
+          appointmentId: appointment.id
+        }
+        
+        // Show the modal
+        const modal = new Modal(statusUpdateModal.value)
+        modal.show()
+      }
+      
+      const saveAppointmentStatus = async () => {
+        updatingStatus.value = true
+        
+        try {
+          await store.dispatch('appointments/updateAppointmentStatus', {
+            id: appointmentStatusForm.value.appointmentId,
+            status: appointmentStatusForm.value.statut
+          })
+          notify.success('Appointment status updated successfully')
+          closeStatusUpdateModal()
+          loadClientAppointments() // Reload appointments after updating
+        } catch (error) {
+          console.error('Error updating appointment status:', error)
+          notify.error(error.message || 'Error updating appointment status')
+        } finally {
+          updatingStatus.value = false
+        }
+      }
+      
+      const closeStatusUpdateModal = () => {
+        const modal = Modal.getInstance(statusUpdateModal.value)
+        if (modal) {
+          modal.hide()
+        }
+      }
+      
       return {
         searchQuery,
         loading,
@@ -502,6 +591,7 @@
         clientModal,
         appointmentsModal,
         deleteModal,
+        statusUpdateModal,
         selectedClient,
         isEditing,
         saving,
@@ -509,6 +599,8 @@
         loadingAppointments,
         appointmentsError,
         clientAppointments,
+        appointmentStatusForm,
+        updatingStatus,
         formatDate,
         formatTime,
         loadClients,
@@ -525,7 +617,10 @@
         getServiceName,
         getServicePrice,
         getStatusClass,
-        getStatusBadgeClass
+        getStatusBadgeClass,
+        updateAppointmentStatus,
+        saveAppointmentStatus,
+        closeStatusUpdateModal
       }
     }
   }

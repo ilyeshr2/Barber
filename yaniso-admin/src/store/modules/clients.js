@@ -110,7 +110,22 @@ export default {
       
       try {
         const appointments = await ClientService.getClientAppointments(id)
-        return appointments
+        
+        // Map backend appointment fields to frontend fields
+        const mappedAppointments = appointments.map(appointment => ({
+          id: appointment.id,
+          date: appointment.appointment_date,
+          statut: appointment.status === 'confirmed' ? 'confirmé' :
+                 appointment.status === 'cancelled' ? 'annulé' :
+                 appointment.status === 'completed' ? 'terminé' : 'confirmé',
+          UtilisateurId: appointment.user_id,
+          BarbierId: appointment.barber_id,
+          ServiceId: appointment.service_id,
+          createdAt: appointment.created_at,
+          updatedAt: appointment.updated_at
+        }))
+        
+        return mappedAppointments
       } catch (error) {
         commit('SET_ERROR', error.message)
         throw error

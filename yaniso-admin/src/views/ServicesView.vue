@@ -37,7 +37,7 @@
               <tr>
                 <th>Nom</th>
                 <th>Durée (min)</th>
-                <th>Prix (DA)</th>
+                <th>Prix (CAD)</th>
                 <th>Barbier</th>
                 <th>Actions</th>
               </tr>

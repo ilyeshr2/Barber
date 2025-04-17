@@ -79,7 +79,7 @@
         >
           <option value="">Select a service</option>
           <option v-for="service in filteredServices" :key="service.id" :value="service.id">
-            {{ service.nom }} - {{ service.duree }}min - {{ service.prix }}DA
+            {{ service.nom }} - {{ service.duree }}min - {{ service.prix }}CAD
           </option>
         </select>
         

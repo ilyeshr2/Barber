@@ -99,7 +99,7 @@
                 <td>{{ getClientName(appointment) }}</td>
                 <td>{{ getBarbierName(appointment.BarbierId) }}</td>
                 <td>{{ getServiceName(appointment.ServiceId) }}</td>
-                <td>{{ getServicePrice(appointment.ServiceId) }} DA</td>
+                <td>{{ getServicePrice(appointment.ServiceId) }} CAD</td>
                 <td>
                   <span :class="getStatusBadgeClass(appointment.statut)">
                     {{ appointment.statut }}
@@ -190,6 +190,7 @@
   <script>
   import { ref, computed, onMounted } from 'vue'
   import { useStore } from 'vuex'
+  import { useRoute } from 'vue-router'
   import { Modal } from 'bootstrap'
   import { formatDate, formatTime } from '@/utils/format'
   import { notify } from '@/utils/notification'
@@ -208,6 +209,7 @@
     },
     setup() {
       const store = useStore()
+      const route = useRoute()
       const appointmentModal = ref(null)
       const appointmentDetailsModal = ref(null)
       const deleteModal = ref(null)
@@ -260,6 +262,31 @@
           store.dispatch('clients/fetchClients'),
           store.dispatch('appointments/fetchAppointments')
         ])
+        
+        // Check if we're navigating to create a new appointment for a specific client
+        if (route.query.action === 'new' && route.query.clientId) {
+          const clientId = parseInt(route.query.clientId)
+          const client = store.getters['clients/clients'].find(c => c.id === clientId)
+          
+          if (client) {
+            isEditing.value = false
+            const today = new Date()
+            today.setMinutes(Math.ceil(today.getMinutes() / 30) * 30)
+            
+            currentAppointment.value = {
+              date: today.toISOString(),
+              statut: 'confirmé',
+              UtilisateurId: clientId,
+              BarbierId: null,
+              ServiceId: null
+            }
+            
+            setTimeout(() => {
+              const modal = new Modal(appointmentModal.value)
+              modal.show()
+            }, 500) // Small delay to ensure the modal is mounted
+          }
+        }
       })
       
       const toggleView = () => {

@@ -72,7 +72,7 @@ vueCopy<template>
                     </GridLayout>
                     <GridLayout row="3" columns="*, auto">
                       <Button text="Annuler le rendez-vous" @tap="annulerRendezVous(rdv.id)" class="cancel-btn" col="0" />
-                      <Label :text="getServicePrice(rdv) + ' DA'" class="price-label" col="1" />
+                      <Label :text="getServicePrice(rdv) + ' CAD'" class="price-label" col="1" />
                     </GridLayout>
                   </GridLayout>
                 </StackLayout>

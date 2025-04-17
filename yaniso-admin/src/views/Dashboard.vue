@@ -173,7 +173,7 @@
                       <tr v-for="service in services.slice(0, 5)" :key="service.id">
                         <td>{{ service.nom }}</td>
                         <td>{{ service.duree }} min</td>
-                        <td>{{ service.prix }} DA</td>
+                        <td>{{ service.prix }} CAD</td>
                         <td>{{ getBarbierName(service.BarberId) }}</td>
                       </tr>
                       <tr v-if="services.length === 0">

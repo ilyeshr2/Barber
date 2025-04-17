@@ -52,7 +52,7 @@
               </div>
               <div class="col-md-6">
                 <h6 class="text-muted">Price</h6>
-                <p class="mb-0 fs-5 fw-bold">{{ getServicePrice(appointment.ServiceId) }} DA</p>
+                <p class="mb-0 fs-5 fw-bold">{{ getServicePrice(appointment.ServiceId) }} CAD</p>
               </div>
             </div>
             

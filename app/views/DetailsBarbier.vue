@@ -41,7 +41,7 @@
                   </StackLayout>
                   <Label :text="service.nom" class="service-name" col="1" row="0" />
                   <Label :text="service.duree + ' minutes'" class="service-duration" col="1" row="1" />
-                  <Label :text="service.prix + ' DA'" class="service-price" col="2" row="0" rowSpan="2" verticalAlignment="center" />
+                  <Label :text="service.prix + ' CAD'" class="service-price" col="2" row="0" rowSpan="2" verticalAlignment="center" />
                 </GridLayout>
                 
                 <!-- Services loading error with retry button -->
@@ -144,7 +144,7 @@
           </GridLayout>
           
           <!-- Price -->
-          <Label :text="selectedService ? selectedService.prix + ' DA' : ''" class="price" />
+          <Label :text="selectedService ? selectedService.prix + ' CAD' : ''" class="price" />
           
           <!-- Loading indicator -->
           <ActivityIndicator v-if="confirming" busy="true" color="#ffcd50" class="loading-indicator" />
