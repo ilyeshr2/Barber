@@ -4,7 +4,7 @@
     <GridLayout rows="auto, *, auto">
       <!-- En-tête -->
       <GridLayout columns="*, auto" class="header" row="0">
-        <Image src="~/assets/images/yaniso-logo.png" class="app-icon" col="1" />
+        <Image :src="salonLogo" class="app-icon" col="1" />
         <Label text="Paramètres" class="settings-title" col="0" />
       </GridLayout>
 
@@ -65,7 +65,7 @@
 </template>
 
 <script>
-import { authService } from '../services/api';
+import { authService, salonService } from '../services/api';
 import { confirm } from '@nativescript/core/ui/dialogs';
 import * as ApplicationSettings from '@nativescript/core/application-settings';
 import NavigationBar from '../components/NavigationBar';
@@ -80,7 +80,8 @@ export default {
       darkModeEnabled: true, // Default to true since your switch was checked
       isFirstLoad: true,
       loading: false,
-      error: null
+      error: null,
+      salonLogo: '~/assets/images/yaniso-logo.png' // Default logo
     };
   },
   computed: {
@@ -107,6 +108,7 @@ export default {
   mounted() {
     this.refreshUserInfo();
     this.ensurePhoneNumber();
+    this.loadSalonInfo();
 
     // Set up event handler for page navigation
     const page = this.$el.nativeView;
@@ -217,6 +219,31 @@ export default {
       this.darkModeEnabled = !this.darkModeEnabled;
       // Here you would implement the actual dark mode logic
       // For example, changing app-wide CSS variables or theme
+    },
+
+    async loadSalonInfo() {
+      try {
+        console.log('Parametres.vue: Requesting salon info...');
+        const salon = await salonService.getSalonInfo();
+        console.log('Parametres.vue: Got salon info:', JSON.stringify({
+          name: salon.name, 
+          logoUrl: salon.logoUrl
+        }));
+        
+        if (salon && salon.logoUrl) {
+          console.log('Parametres.vue: Setting salon logo to:', salon.logoUrl);
+          // Add a timestamp to avoid caching
+          if (salon.logoUrl.startsWith('http')) {
+            this.salonLogo = `${salon.logoUrl}?t=${new Date().getTime()}`;
+          } else {
+            this.salonLogo = salon.logoUrl;
+          }
+          console.log('Parametres.vue: Final logo URL:', this.salonLogo);
+        }
+      } catch (error) {
+        console.error('Error loading salon info:', error);
+        // Keep default values if the API fails
+      }
     }
   }
 };

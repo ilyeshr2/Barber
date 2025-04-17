@@ -66,7 +66,7 @@
 </template>
 
 <script>
-import { barbierService, authService } from '../services/api';
+import { barbierService, authService, salonService } from '../services/api';
 import NavigationBar from '../components/NavigationBar';
 
 export default {
@@ -130,17 +130,31 @@ export default {
 
     async loadSalonInfo() {
       try {
-        // If you've implemented the salonService as suggested in the previous code
-        if (typeof salonService !== 'undefined') {
-          const salon = await salonService.getSalonInfo();
-          if (salon) {
-            this.salonInfo = salon;
-            if (salon.address) {
-              this.salonAddress = salon.address;
+        console.log('Barbiers.vue: Requesting salon info...');
+        const salon = await salonService.getSalonInfo();
+        console.log('Barbiers.vue: Got salon response:', JSON.stringify({
+          name: salon.name,
+          logoUrl: salon.logoUrl
+        }));
+        
+        if (salon) {
+          this.salonInfo = salon;
+          
+          // Update address
+          if (salon.address) {
+            this.salonAddress = salon.address;
+          }
+          
+          // Update logo - force reload by appending timestamp
+          if (salon.logoUrl) {
+            console.log('Barbiers.vue: Setting salon logo to:', salon.logoUrl);
+            // Add a timestamp to avoid caching
+            if (salon.logoUrl.startsWith('http')) {
+              this.salonLogo = `${salon.logoUrl}?t=${new Date().getTime()}`;
+            } else {
+              this.salonLogo = salon.logoUrl;
             }
-            if (salon.logo_url) {
-              this.salonLogo = salon.logo_url;
-            }
+            console.log('Barbiers.vue: Final logo URL:', this.salonLogo);
           }
         }
       } catch (error) {

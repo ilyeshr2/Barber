@@ -2,7 +2,15 @@
 import Vue from 'nativescript-vue';
 import Connexion from './views/Connexion';
 import PeloStudio from './views/PeloStudio';
-import { authService } from './services/api';
+import { authService, settingsService } from './services/api';
+
+// Clear image cache on startup to ensure we get fresh images
+try {
+  console.log("Clearing image cache on app startup...");
+  settingsService.clearImageCache();
+} catch (error) {
+  console.error("Error clearing cache:", error);
+}
 
 // Import dialog elements
 import { prompt, alert, confirm } from '@nativescript/core/ui/dialogs';

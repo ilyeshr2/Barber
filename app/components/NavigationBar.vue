@@ -3,7 +3,7 @@
     <GridLayout columns="*, *, *, *" class="nav-bar">
       <StackLayout col="0" class="nav-item" :class="{ 'active': currentPage === 'PeloStudio' }" @tap="goToPage('PeloStudio')">
         <Image src="~/assets/images/home-icon.png" class="nav-icon" />
-        <Label text="Yaniso Studio" class="nav-text" />
+        <Label :text="salonName" class="nav-text" />
       </StackLayout>
       <StackLayout col="1" class="nav-item" :class="{ 'active': currentPage === 'Barbiers' }" @tap="goToPage('Barbiers')">
         <Image src="~/assets/images/barber-icon.png" class="nav-icon" />
@@ -21,6 +21,8 @@
   </template>
   
   <script>
+  import { salonService } from '../services/api';
+  
   export default {
     props: {
       currentPage: {
@@ -28,7 +30,26 @@
         required: true
       }
     },
+    data() {
+      return {
+        salonName: 'Yaniso Studio' // Default name, will be updated from API
+      };
+    },
+    mounted() {
+      this.loadSalonInfo();
+    },
     methods: {
+      async loadSalonInfo() {
+        try {
+          const salon = await salonService.getSalonInfo();
+          if (salon && salon.name) {
+            this.salonName = salon.name;
+          }
+        } catch (error) {
+          console.error('Error loading salon info:', error);
+          // Keep default name if the API fails
+        }
+      },
       goToPage(page) {
         if (page === this.currentPage) return;
         

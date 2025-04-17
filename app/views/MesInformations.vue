@@ -12,7 +12,7 @@
       <ScrollView row="1">
         <StackLayout class="info-container">
           <!-- Logo -->
-          <Image src="~/assets/images/yaniso-logo.png" class="logo" stretch="aspectFit" />
+          <Image :src="salonLogo" class="logo" stretch="aspectFit" />
           
           <!-- Loading indicator -->
           <ActivityIndicator v-if="loading" busy="true" color="#ffcd50" />
@@ -89,7 +89,7 @@
   </Page>
 </template>
 <script>
-import { authService } from '../services/api';
+import { authService, salonService } from '../services/api';
 import * as ApplicationSettings from "@nativescript/core/application-settings";
 import { alert, confirm, action } from '@nativescript/core/ui/dialogs';
 
@@ -108,11 +108,13 @@ export default {
       telephone: '',
       email: '',
       isDatePickerVisible: false,
-      formattedDate: ''
+      formattedDate: '',
+      salonLogo: '~/assets/images/yaniso-logo.png' // Default logo
     };
   },
   mounted() {
     this.loadUserData();
+    this.loadSalonInfo();
   },
   methods: {
     async loadUserData() {
@@ -261,6 +263,26 @@ export default {
           });
         }
       });
+    },
+    
+    async loadSalonInfo() {
+      try {
+        console.log('MesInformations.vue: Requesting salon info...');
+        const salon = await salonService.getSalonInfo();
+        
+        if (salon && salon.logoUrl) {
+          console.log('MesInformations.vue: Setting salon logo to:', salon.logoUrl);
+          // Add a timestamp to avoid caching
+          if (salon.logoUrl.startsWith('http')) {
+            this.salonLogo = `${salon.logoUrl}?t=${new Date().getTime()}`;
+          } else {
+            this.salonLogo = salon.logoUrl;
+          }
+        }
+      } catch (error) {
+        console.error('Error loading salon info:', error);
+        // Keep default values if the API fails
+      }
     }
   }
 };

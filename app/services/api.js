@@ -444,9 +444,36 @@ export const refreshUserInfo = async () => {
 export const salonService = {
   async getSalonInfo() {
     try {
-      const response = await fetchApi('/salons/current', { method: 'GET' });
+      console.log('Fetching salon info from API...');
+      let response;
       
-      return {
+      try {
+        // First attempt with the 'salons/current' endpoint
+        response = await fetchApi('salons/current', { method: 'GET' });
+      } catch (error) {
+        console.log('First endpoint failed, trying fallback endpoint...');
+        // Fallback to 'salon' endpoint if the first one fails
+        response = await fetchApi('salon', { method: 'GET' });
+      }
+      
+      console.log('Raw salon API response:', JSON.stringify(response));
+      
+      // Process logo URL - add server base URL if it's a relative path
+      let logoUrl = response.logo_url || '~/assets/images/yaniso-logo.png';
+      console.log('Original logo_url from API:', response.logo_url);
+      
+      if (logoUrl && logoUrl.startsWith('/')) {
+        logoUrl = `http://10.0.2.2:3000${logoUrl}`;
+        console.log('Modified logo URL with base URL:', logoUrl);
+      }
+      
+      // Process image URL - add server base URL if it's a relative path
+      let imageUrl = response.image_url || '~/assets/images/salon.jpg';
+      if (imageUrl && imageUrl.startsWith('/')) {
+        imageUrl = `http://10.0.2.2:3000${imageUrl}`;
+      }
+      
+      const result = {
         id: response.id || 1,
         name: response.name || 'Modern Barber Shop',
         address: response.address || '123 Main Street, New York, NY 10001',
@@ -467,8 +494,17 @@ export const salonService = {
           { name: 'Facebook', url: 'https://facebook.com/modernbarbershop' },
           { name: 'Twitter', url: 'https://twitter.com/modernbarbershop' }
         ],
-        imageUrl: response.imageUrl || '~/assets/images/salon.jpg'
+        logoUrl: logoUrl,
+        imageUrl: imageUrl
       };
+      
+      console.log('Final salon object returned:', JSON.stringify({
+        id: result.id,
+        name: result.name,
+        logoUrl: result.logoUrl
+      }));
+      
+      return result;
     } catch (error) {
       console.error('Error fetching salon info:', error);
       // Return fallback data if API fails
@@ -493,6 +529,7 @@ export const salonService = {
           { name: 'Facebook', url: 'https://facebook.com/modernbarbershop' },
           { name: 'Twitter', url: 'https://twitter.com/modernbarbershop' }
         ],
+        logoUrl: '~/assets/images/yaniso-logo.png',
         imageUrl: '~/assets/images/salon.jpg'
       };
     }
@@ -562,6 +599,20 @@ export const settingsService = {
       return true;
     } catch (error) {
       console.error('Error refreshing settings:', error);
+      return false;
+    }
+  },
+  
+  clearImageCache: () => {
+    try {
+      // Using a more compatible approach instead of image-cache
+      // This is just a placeholder, as the real caching issue is on the server side
+      console.log('Image cache clear requested - using cache busting with timestamp instead');
+      
+      // We're already adding timestamps to URLs in the view components
+      return true;
+    } catch (error) {
+      console.error('Error clearing image cache:', error);
       return false;
     }
   }

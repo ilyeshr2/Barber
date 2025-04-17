@@ -6,7 +6,7 @@ vueCopy<template>
       <GridLayout columns="auto, *, auto" class="header" row="0">
         <Image :src="userAvatar" class="user-avatar" col="0" />
         <Label text="" col="1" />
-        <Image src="~/assets/images/yaniso-logo.png" class="app-icon" col="2" />
+        <Image :src="salonLogo" class="app-icon" col="2" />
       </GridLayout>
 
       <!-- Title container (moved after header) -->
@@ -89,7 +89,7 @@ vueCopy<template>
 </template>
 
 <script>
-import { rendezVousService, authService } from '../services/api';
+import { rendezVousService, authService, salonService } from '../services/api';
 import { formatAppointmentDate, formatDisplayTime } from '../utils/helpers';
 import { confirm, alert } from '@nativescript/core/ui/dialogs';
 import NavigationBar from '../components/NavigationBar';
@@ -106,6 +106,7 @@ export default {
       userAvatar: '~/assets/images/user-avatar.png',
       userInfo: null,
       cancellingId: null, // Track which appointment is currently being cancelled
+      salonLogo: '~/assets/images/yaniso-logo.png'
     };
   },
   computed: {
@@ -123,6 +124,7 @@ export default {
   mounted() {
     this.loadAppointments();
     this.refreshUserInfo();
+    this.loadSalonInfo();
 
     // Set up event handler for page navigation
     const page = this.$el.nativeView;
@@ -241,6 +243,19 @@ export default {
       // Also reload appointments when coming back to this page
       if (this.isLoggedIn) {
         this.loadAppointments();
+      }
+    },
+
+    async loadSalonInfo() {
+      try {
+        const salon = await salonService.getSalonInfo();
+        if (salon && salon.logoUrl) {
+          console.log('Setting salon logo to:', salon.logoUrl);
+          this.salonLogo = salon.logoUrl;
+        }
+      } catch (error) {
+        console.error('Error loading salon info:', error);
+        // Keep default logo if the API fails
       }
     }
   }

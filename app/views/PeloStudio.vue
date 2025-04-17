@@ -151,11 +151,24 @@ export default {
     
     async loadSalonInfo() {
       try {
+        console.log('PeloStudio.vue: Requesting salon info...');
         const salon = await salonService.getSalonInfo();
+        console.log('PeloStudio.vue: Got salon response:', JSON.stringify({
+          name: salon.name,
+          logoUrl: salon.logoUrl
+        }));
+        
         if (salon) {
           this.salonName = salon.name;
-          if (salon.logo_url) {
-            this.salonLogo = salon.logo_url;
+          if (salon.logoUrl) {
+            console.log('PeloStudio.vue: Setting salon logo to:', salon.logoUrl);
+            // Add a timestamp to avoid caching
+            if (salon.logoUrl.startsWith('http')) {
+              this.salonLogo = `${salon.logoUrl}?t=${new Date().getTime()}`;
+            } else {
+              this.salonLogo = salon.logoUrl;
+            }
+            console.log('PeloStudio.vue: Final logo URL:', this.salonLogo);
           }
         }
       } catch (error) {
@@ -182,7 +195,7 @@ export default {
       this.refreshUserInfo();
     }
   }
-};;
+};
 </script>
 
 
