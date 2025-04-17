@@ -34,7 +34,7 @@
           <div class="card bg-warning text-white mb-4">
             <div class="card-body">
               <h5 class="card-title">{{ appointmentsCount || 0 }}</h5>
-              <p class="card-text">Rendez-vous aujourd'hui</p>
+              <p class="card-text">Confirmed Appointments Today</p>
             </div>
             <div class="card-footer d-flex align-items-center justify-content-between">
               <router-link to="/appointments" class="small text-white stretched-link">View Details</router-link>
@@ -62,7 +62,7 @@
           <div class="card mb-4">
             <div class="card-header">
               <i class="bi bi-calendar me-1"></i>
-              Upcoming Appointments
+              Upcoming Appointments <span class="text-muted small">(Confirmed only)</span>
             </div>
             <div class="card-body">
               <div v-if="upcomingAppointmentsLoading" class="text-center py-3">
@@ -285,7 +285,11 @@
         try {
           await store.dispatch('appointments/fetchTodayAppointments')
           const todayAppointments = store.getters['appointments/todayAppointments']
-          appointmentsCount.value = todayAppointments.length
+          // Filter out canceled and completed appointments
+          const activeAppointments = todayAppointments.filter(
+            appointment => appointment.statut === 'confirmé'
+          )
+          appointmentsCount.value = activeAppointments.length
         } catch (error) {
           console.error('Error loading appointments count:', error)
           appointmentsCount.value = 0 // Set a fallback value
@@ -310,21 +314,28 @@
           await store.dispatch('appointments/fetchUpcomingAppointments')
           const allUpcoming = store.getters['appointments/upcomingAppointments']
           
+          // Filter out canceled and completed appointments
+          const activeAppointments = allUpcoming.filter(
+            appointment => appointment.statut === 'confirmé'
+          )
+          
           // Get all appointments if we don't have enough upcoming ones
-          if (allUpcoming.length === 0) {
+          if (activeAppointments.length === 0) {
             await store.dispatch('appointments/fetchAppointments')
             const allAppointments = store.getters['appointments/appointments']
             
-            // Filter future appointments
+            // Filter future appointments that are confirmed (not canceled or completed)
             const now = new Date()
-            const futureAppointments = allAppointments.filter(a => new Date(a.date) > now)
+            const futureAppointments = allAppointments.filter(a => 
+              new Date(a.date) > now && a.statut === 'confirmé'
+            )
             
-            // Sort by date - display all appointments
+            // Sort by date
             futureAppointments.sort((a, b) => new Date(a.date) - new Date(b.date))
             upcomingAppointments.value = futureAppointments
           } else {
-            // Display all upcoming appointments
-            upcomingAppointments.value = allUpcoming
+            // Display active upcoming appointments
+            upcomingAppointments.value = activeAppointments
           }
         } catch (error) {
           console.error('Error loading upcoming appointments:', error)

@@ -126,9 +126,14 @@ export default {
       try {
         const appointments = await AppointmentService.getTodayAppointments()
         
+        // Filter out canceled and completed appointments
+        const activeAppointments = appointments.filter(
+          appointment => appointment.statut === 'confirmé'
+        )
+        
         // The service already maps the data, so we can directly use it
-        commit('SET_TODAY_APPOINTMENTS', appointments)
-        return appointments
+        commit('SET_TODAY_APPOINTMENTS', activeAppointments)
+        return activeAppointments
       } catch (error) {
         commit('SET_ERROR', error.message)
         throw error
@@ -160,8 +165,13 @@ export default {
           ...appointment
         }))
         
-        commit('SET_UPCOMING_APPOINTMENTS', mappedAppointments)
-        return mappedAppointments
+        // Filter out canceled and completed appointments
+        const activeAppointments = mappedAppointments.filter(
+          appointment => appointment.statut === 'confirmé'
+        )
+        
+        commit('SET_UPCOMING_APPOINTMENTS', activeAppointments)
+        return activeAppointments
       } catch (error) {
         commit('SET_ERROR', error.message)
         throw error
