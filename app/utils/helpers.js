@@ -12,10 +12,12 @@ export const formatDisplayDate = (date) => {
   return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
 };
 
-// Format time for display (HH:MM)
+// Format time for display (e.g., "09:30")
 export const formatDisplayTime = (date) => {
-  const d = new Date(date);
-  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+  // Prevent any automatic timezone conversion
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 };
 
 // Generate an array of available dates for the next 7 days
@@ -77,6 +79,7 @@ export const generateTimeSlots = () => {
 
 // Format date for appointment card display
 export const formatAppointmentDate = (dateString) => {
+  // Create date object without timezone conversion
   const date = new Date(dateString);
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

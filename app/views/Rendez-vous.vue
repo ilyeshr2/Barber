@@ -164,14 +164,39 @@ export default {
 
     formatNextAppointment() {
       if (this.rendezVous.length === 0) return '';
+      
       const rdv = this.rendezVous[0];
-      const date = new Date(rdv.date);
-      const formattedDate = `${date.getDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getMonth()]}`;
-      return `${formattedDate} - ${formatDisplayTime(date)} with ${this.getBarberName(rdv)}`;
+      // Utiliser la même approche que formatAppointmentDate
+      const [datePart, timePart] = rdv.date.split('T');
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hour, minute] = timePart.split(':').map(Number);
+      
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      // Formater l'heure manuellement
+      const formattedHour = hour.toString().padStart(2, '0');
+      const formattedMinute = minute.toString().padStart(2, '0');
+      
+      return `${day} ${months[month-1]} - ${formattedHour}:${formattedMinute} with ${this.getBarberName(rdv)}`;
     },
 
     formatAppointmentDate(dateString) {
-      return formatAppointmentDate(dateString);
+      // Récupérer les composants de la date directement à partir de la chaîne
+      const [datePart, timePart] = dateString.split('T');
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hour, minute] = timePart.split(':').map(Number);
+      
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      // Créer une date locale sans conversion de fuseau horaire
+      const date = new Date(year, month - 1, day, hour, minute);
+      const dayOfWeek = date.getDay();
+      
+      // Formater l'heure manuellement pour éviter les conversions
+      const formattedHour = hour.toString().padStart(2, '0');
+      const formattedMinute = minute.toString().padStart(2, '0');
+      
+      return `${days[dayOfWeek]} ${day} ${months[month - 1]} ${year} - ${formattedHour}:${formattedMinute}`;
     },
 
     getBarberName(rdv) {

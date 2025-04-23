@@ -324,29 +324,39 @@ export const rendezVousService = {
   getUserAppointments: async () => {
     try {
       const appointments = await fetchApi("appointments");
+      
       // Transform appointment data to match the format expected by the app
-      return appointments.map(appointment => ({
-        id: appointment.id,
-        date: appointment.appointment_date,
-        statut: appointment.status,
-        UtilisateurId: appointment.user_id,
-        BarbierId: appointment.barber_id,
-        ServiceId: appointment.service_id,
-        createdAt: appointment.created_at,
-        updatedAt: appointment.updated_at,
-        // Include related models if available in response
-        Barbier: appointment.Barber ? {
-          id: appointment.Barber.id,
-          nom: appointment.Barber.name,
-          photoUrl: appointment.Barber.photo_url
-        } : null,
-        Service: appointment.Service ? {
-          id: appointment.Service.id,
-          nom: appointment.Service.name,
-          duree: appointment.Service.duration,
-          prix: appointment.Service.price
-        } : null
-      }));
+      return appointments.map(appointment => {
+        // Conserve exactement la chaîne de date reçue de l'API, sans créer d'objet Date
+        // qui causerait une conversion automatique du fuseau horaire
+        const appointmentDate = appointment.appointment_date;
+        
+        // Log pour débogage
+        console.log('Date from API:', appointmentDate);
+        
+        return {
+          id: appointment.id,
+          date: appointmentDate, // Conserver la date exacte sans conversion
+          statut: appointment.status,
+          UtilisateurId: appointment.user_id,
+          BarbierId: appointment.barber_id,
+          ServiceId: appointment.service_id,
+          createdAt: appointment.created_at,
+          updatedAt: appointment.updated_at,
+          // Include related models if available in response
+          Barbier: appointment.Barber ? {
+            id: appointment.Barber.id,
+            nom: appointment.Barber.name,
+            photoUrl: appointment.Barber.photo_url
+          } : null,
+          Service: appointment.Service ? {
+            id: appointment.Service.id,
+            nom: appointment.Service.name,
+            duree: appointment.Service.duration,
+            prix: appointment.Service.price
+          } : null
+        };
+      });
     } catch (error) {
       console.error('Error fetching appointments:', error);
       throw new Error('Failed to load appointments. Please try again later.');
@@ -355,22 +365,44 @@ export const rendezVousService = {
   
   createAppointment: async (appointmentData) => {
     try {
+      // Get the original date
+      const originalDate = new Date(appointmentData.date);
+      
+      // Format the date as a string in Montreal's timezone format
+      const year = originalDate.getFullYear();
+      const month = String(originalDate.getMonth() + 1).padStart(2, '0');
+      const day = String(originalDate.getDate()).padStart(2, '0');
+      const hours = String(originalDate.getHours()).padStart(2, '0');
+      const minutes = String(originalDate.getMinutes()).padStart(2, '0');
+      
+      // Create a date string that clearly indicates it's in Montreal time
+      const montrealDateString = `${year}-${month}-${day}T${hours}:${minutes}:00`;
+      
       // Format data according to the new API structure
       const formattedData = {
         barber_id: appointmentData.barbierId,
         service_id: appointmentData.serviceId,
-        appointment_date: appointmentData.date
+        // Send the appointment date as a clear Montreal time string
+        appointment_date: montrealDateString,
+        // Explicitly tell the server this is Montreal time
+        timezone: "America/Montreal"
       };
+      
+      console.log('Original date selected:', originalDate.toString());
+      console.log('Montreal date string being sent:', montrealDateString);
       
       const appointment = await fetchApi("appointments", {
         method: "POST",
         body: formattedData
       });
       
+      // Store the exact date we selected originally - don't let JavaScript convert it
+      const responseDate = montrealDateString;
+      
       // Transform to the format expected by the app
       return {
         id: appointment.id,
-        date: appointment.appointment_date,
+        date: responseDate, // Use our original date string
         statut: appointment.status,
         UtilisateurId: appointment.user_id,
         BarbierId: appointment.barber_id,

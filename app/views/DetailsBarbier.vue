@@ -471,37 +471,73 @@ export default {
         return;
       }
       
-      // Create appointment date/time
-      this.appointmentDate = new Date(this.selectedDate.date);
+      // Create appointment date/time by checking the type of selectedDate.date
+      let year, month, day;
+      
+      // Check if selectedDate.date is a string or Date object
+      if (typeof this.selectedDate.date === 'string') {
+        // If it's a string, parse it
+        [year, month, day] = this.selectedDate.date.split('-').map(Number);
+      } else if (this.selectedDate.date instanceof Date) {
+        // If it's a Date object, extract components
+        year = this.selectedDate.date.getFullYear();
+        month = this.selectedDate.date.getMonth() + 1; // JavaScript months are 0-indexed
+        day = this.selectedDate.date.getDate();
+      } else {
+        // Use date from selectedDate directly (it's an object with year, month, day)
+        year = this.selectedDate.year;
+        month = this.selectedDate.month;
+        day = this.selectedDate.numero;
+      }
+      
       const [hours, minutes] = this.selectedHoraire.heure.split(':').map(Number);
-      this.appointmentDate.setHours(hours, minutes, 0, 0);
+      
+      // Format the date as a string directly (to avoid timezone issues)
+      const appointmentDateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+      this.appointmentDate = new Date(appointmentDateStr);
       
       // Show confirmation modal
       this.showConfirmationModal = true;
     },
     
     async confirmerReservation() {
+      if (this.confirming) return;
+      
       this.confirming = true;
-      this.confirmationError = '';
+      this.confirmationError = null;
       
       try {
-        await rendezVousService.createAppointment({
+        if (!authService.isLoggedIn()) {
+          throw new Error("You must be logged in to confirm a reservation");
+        }
+        
+        if (!this.appointmentDate || !this.barbier || !this.selectedService) {
+          throw new Error("Missing required information. Please try again.");
+        }
+        
+        // Format the date as a string directly to prevent timezone issues
+        const year = this.appointmentDate.getFullYear();
+        const month = (this.appointmentDate.getMonth() + 1).toString().padStart(2, '0');
+        const day = this.appointmentDate.getDate().toString().padStart(2, '0');
+        const hours = this.appointmentDate.getHours().toString().padStart(2, '0');
+        const minutes = this.appointmentDate.getMinutes().toString().padStart(2, '0');
+        const appointmentDateStr = `${year}-${month}-${day}T${hours}:${minutes}:00`;
+        
+        // Create the appointment with the formatted date string
+        const result = await rendezVousService.createAppointment({
           barbierId: this.barbier.id,
           serviceId: this.selectedService.id,
-          date: this.appointmentDate.toISOString()
+          date: appointmentDateStr // Use string format directly
         });
-        
-        // Hide modal after successful booking
-        this.showConfirmationModal = false;
         
         // Show success message
         await alert({
-          title: "Appointment Confirmed",
+          title: "Reservation Confirmed",
           message: "Your appointment has been successfully booked!",
           okButtonText: "OK"
         });
         
-        // Navigate to appointments page
+        // Navigate back
         this.$navigateTo(require('./Rendez-vous').default, {
           clearHistory: true
         });
