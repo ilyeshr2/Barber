@@ -3,6 +3,12 @@ import { isAndroid, isIOS } from '@nativescript/core/platform';
 import * as ApplicationSettings from '@nativescript/core/application-settings';
 
 const getApiHost = () => {
+  // In production build, always use the Linode server
+  if (process.env.NODE_ENV === 'production') {
+    return '172.105.3.8';
+  }
+  
+  // For development only
   if (isAndroid) {
     return '10.0.2.2'; // Android emulator
   } else if (isIOS) {
@@ -19,6 +25,8 @@ const getSetting = (key, defaultValue) => {
 
 export default {
   API_URL: `http://${getApiHost()}:3000/api`,
+  // Alternative direct approach for production
+  // API_URL: 'http://172.105.3.8/api',
   DEFAULT_LOADING_MESSAGE: getSetting('loading_message', "Loading..."),
   DEFAULT_ERROR_MESSAGE: getSetting('error_message', "Something went wrong. Please try again later."),
   PLACEHOLDER_IMAGES: {
@@ -38,7 +46,9 @@ export default {
   // Method to refresh settings from the server
   async refreshSettings() {
     try {
-      const response = await fetch(`http://${getApiHost()}:3000/api/settings`);
+      // Update to use the same API_URL as defined above
+      const host = getApiHost();
+      const response = await fetch(`http://${host}:3000/api/settings`);
       if (response.ok) {
         const settings = await response.json();
         if (settings) {
