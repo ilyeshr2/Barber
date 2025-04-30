@@ -1,62 +1,64 @@
 <!-- app/views/Connexion.vue -->
 <template>
   <Page actionBarHidden="true">
-    <StackLayout class="connexion-container">
+    <ScrollView>
+      <StackLayout class="connexion-container">
 
-      <StackLayout class="partie1">
-      <!-- Logo -->
-      <Image src="~/assets/images/yaniso-logo.png" class="logo" stretch="aspectFit" />
-      
+        <StackLayout class="partie1">
+        <!-- Logo -->
+        <Image src="~/assets/images/yaniso-logo.png" class="logo" stretch="aspectFit" />
+        
 
-      <StackLayout class="text-bien">
-      <!-- Welcome text -->
-      <Label text="Bienvenue" class="welcome-heading" />
-      <Label text="Veuillez entrer le numéro de téléphone associé à votre compte client." class="welcome-text" textWrap="true" />
-    </StackLayout>
-      <!-- Error message -->
-      <Label v-if="errorMessage" class="error-message" :text="errorMessage" textWrap="true" />
+        <StackLayout class="text-bien">
+        <!-- Welcome text -->
+        <Label text="Bienvenue" class="welcome-heading" />
+        <Label text="Veuillez entrer le numéro de téléphone associé à votre compte client." class="welcome-text" textWrap="true" />
+      </StackLayout>
+        <!-- Error message -->
+        <Label v-if="errorMessage" class="error-message" :text="errorMessage" textWrap="true" />
+        
+    <!-- Phone field only - focused approach -->
+    <GridLayout class="phone-container" rows="auto, auto" columns="*">
+      <!-- "Phone:" label above the input -->
+      <Label text="Téléphone:" class="phone-label" row="0" col="0" />
       
-<!-- Phone field only - focused approach -->
-<GridLayout class="phone-container" rows="auto, auto" columns="*">
-  <!-- "Phone:" label above the input -->
-  <Label text="Téléphone:" class="phone-label" row="0" col="0" />
-  
-  <!-- Country code and text field in the second row -->
-  <GridLayout rows="auto" columns="auto, *" class="phone-input-row" row="1" col="0">
-    <!-- Country code with flag -->
-    <StackLayout row="0" col="0" class="country-code-box">
-      <GridLayout rows="auto" columns="auto, auto" class="country-code-content">
-        <Image src="~/assets/images/dz-flag.png" width="22" row="0" col="0" class="flag-icon" />
-        <Label text="+1" class="country-code-text" row="0" col="1" />
+      <!-- Country code and text field in the second row -->
+      <GridLayout rows="auto" columns="auto, *" class="phone-input-row" row="1" col="0">
+        <!-- Country code with flag -->
+        <StackLayout row="0" col="0" class="country-code-box">
+          <GridLayout rows="auto" columns="auto, auto" class="country-code-content">
+            <Image src="~/assets/images/dz-flag.png" width="22" row="0" col="0" class="flag-icon" />
+            <Label text="+1" class="country-code-text" row="0" col="1" />
+          </GridLayout>
+        </StackLayout>
+        
+        <!-- Phone input with underscores -->
+        <TextField  hint="___ ___ ____" v-model="telephone" keyboardType="phone" row="0" col="1" class="phone-input" />
       </GridLayout>
-    </StackLayout>
+    </GridLayout>
+          
+        <!-- Password input - extremely simplified -->
+        <TextField v-model="motDePasse" hint="Mot de passe:" secure="true" class="password-field" />
+      </StackLayout>
+
+
+        <StackLayout class="partie2">
+        <!-- Skip login -->
+        <Label text="Continuer sans connexion" class="skip-login" @tap="continuerSansConnexion" />
     
-    <!-- Phone input with underscores -->
-    <TextField  hint="___ ___ ____" v-model="telephone" keyboardType="phone" row="0" col="1" class="phone-input" />
-  </GridLayout>
-</GridLayout>
-      
-      <!-- Password input - extremely simplified -->
-      <TextField v-model="motDePasse" hint="Mot de passe:" secure="true" class="password-field" />
-    </StackLayout>
+        <!-- Login button -->
+        <Button text="Se connecter" @tap="connexion" class="login-button" :enabled="!isLoading" />
+        
+        <!-- Loading indicator -->
+        <ActivityIndicator v-if="isLoading" busy="true" color="#fecc4f" class="loading-indicator" />
+        
+        <!-- Registration text -->
+        <Label text="Pas encore de compte?" class="register-question" />
+        <Label text="Créer un compte" class="register-link" @tap="allerInscription" />
 
-
-      <StackLayout class="partie2">
-      <!-- Skip login -->
-      <Label text="Continuer sans connexion" class="skip-login" @tap="continuerSansConnexion" />
-  
-      <!-- Login button -->
-      <Button text="Se connecter" @tap="connexion" class="login-button" :enabled="!isLoading" />
-      
-      <!-- Loading indicator -->
-      <ActivityIndicator v-if="isLoading" busy="true" color="#fecc4f" class="loading-indicator" />
-      
-      <!-- Registration text -->
-      <Label text="Pas encore de compte?" class="register-question" />
-      <Label text="Créer un compte" class="register-link" @tap="allerInscription" />
-
-    </StackLayout>
-    </StackLayout>
+      </StackLayout>
+      </StackLayout>
+    </ScrollView>
   </Page>
 </template>
 
@@ -135,11 +137,11 @@ methods: {
 }
 
 .partie1 {
-  margin-top: 70;
+  margin-top: 20;
 }
 
 .partie2 {
-  margin-top: 70;
+  margin-top: 20;
 }
 
 .welcome-heading {

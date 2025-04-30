@@ -14,21 +14,14 @@ const ErrorHandler = {
   
   // Get a user-friendly error message
   getErrorMessage(error) {
-    if (!error) {
-      return "An unknown error occurred";
-    }
-    
-    // Use error.message if available
-    if (error.message) {
+    if (error instanceof Error) {
+      return error.message;
+    } else if (typeof error === 'string') {
+      return error;
+    } else if (error && error.message) {
       return error.message;
     }
-    
-    // Convert error to string if it's not an Error object
-    if (typeof error === 'string') {
-      return error;
-    }
-    
-    return "An unexpected error occurred. Please try again.";
+    return 'An unexpected error occurred';
   },
   
   // Handle API errors with different response based on error type
@@ -59,10 +52,33 @@ const ErrorHandler = {
   
   // Log errors for debugging
   logError(context, error) {
-    console.error(`Error in ${context}:`, error);
+    const timestamp = new Date().toISOString();
+    const errorDetails = {
+      timestamp,
+      context,
+      error: error instanceof Error ? {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      } : error
+    };
+    
+    console.error(`[${timestamp}] Error in ${context}:`, errorDetails);
     
     // Could be extended to send errors to a remote logging service
     // e.g., Crashlytics, Sentry, etc.
+  },
+
+  // Handle image loading errors
+  handleImageError(imageUrl, context) {
+    console.error(`[${new Date().toISOString()}] Failed to load image:`, {
+      url: imageUrl,
+      context,
+      environment: process.env.NODE_ENV
+    });
+    
+    // Return a default image path
+    return '~/assets/images/barber-1.jpg';
   }
 };
 

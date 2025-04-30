@@ -16,7 +16,7 @@
           <StackLayout class="welcome-section">
             <Label text="Barbiers" class="page-title" col="1" />
             <Label :text="'Bonjour, ' + userName" class="welcome-text" />
-            <Button text="Donnez-nous votre avis" class="review-button" @tap="giveReview" />
+            <Button text="Donnez-nous votre avis" class="review-button" @tap="openPlayStoreReview" />
           </StackLayout>
 
           <!-- Salon info - now dynamic -->
@@ -40,7 +40,10 @@
           <StackLayout v-else class="barbers-list">
             <StackLayout v-for="barbier in barbiers" :key="barbier.id" class="barber-card" @tap="voirDetailsBarbier(barbier)">
               <GridLayout rows="*">
-                <Image :src="getBarbierImage(barbier)" class="barber-image" stretch="aspectFill" />
+                <Image :src="getBarbierImage(barbier)" 
+                       class="barber-image" 
+                       stretch="aspectFill"
+                       @error="onImageError(barbier.photoUrl, 'barber-list')" />
                 <StackLayout class="barber-info-overlay" horizontalAlignment="center" verticalAlignment="bottom" margin="0 0 20 0">
                   <GridLayout columns="*, auto" rows="auto" class="barber-info-container">
                     <StackLayout col="0" class="barber-info">
@@ -68,6 +71,7 @@
 <script>
 import { barbierService, authService, salonService } from '../services/api';
 import NavigationBar from '../components/NavigationBar';
+import { openUrl } from '@nativescript/core/utils';
 
 export default {
   components: {
@@ -179,7 +183,8 @@ export default {
       
       // If photoUrl starts with /, add the server URL
       if (barbier.photoUrl.startsWith('/')) {
-        return `http://10.0.2.2:3000${barbier.photoUrl}`;
+        const host = process.env.NODE_ENV === 'production' ? '172.105.3.8' : '10.0.2.2';
+        return `http://${host}:3000${barbier.photoUrl}`;
       }
       
       return barbier.photoUrl;
@@ -193,9 +198,15 @@ export default {
       this.refreshUserInfo();
     },
 
-    giveReview() {
-      // Implement the review functionality
-      alert("Cette fonctionnalité sera disponible prochainement!");
+    openPlayStoreReview() {
+      const packageName = 'org.nativescript.PeloStudio';
+      const marketUrl = `market://details?id=${packageName}`;
+      const webUrl = `https://play.google.com/store/apps/details?id=${packageName}`;
+      try {
+        openUrl(marketUrl);
+      } catch (e) {
+        openUrl(webUrl);
+      }
     },
 
     showSalonDetails() {
@@ -208,6 +219,11 @@ export default {
         console.error('SalonDetails view not found:', error);
         alert("Cette fonctionnalité sera disponible prochainement!");
       }
+    },
+
+    onImageError(imageUrl, context) {
+      console.error('Image loading error:', { imageUrl, context });
+      // You can add additional error handling here if needed
     }
   }
 };

@@ -22,7 +22,7 @@
           <StackLayout v-else>
             <!-- Barber profile header -->
             <StackLayout class="barber-header">
-              <Image :src="getBarbierImage()" width="140" height="140" class="barber-pic-h" stretch="aspectFill" />
+              <Image :src="getBarbierImage()" width="140" height="140" class="barber-pic-h" stretch="aspectFill" @error="onImageError(barbier.photoUrl, 'barber-details')" />
               <Label :text="barbier ? barbier.nom : ''" class="barber-name" />
               <StackLayout class="stars-container">
                 <Label text="★★★★★" class="rating-stars" />
@@ -430,7 +430,8 @@ export default {
       
       // If photoUrl starts with /, add the server URL
       if (this.barbier.photoUrl.startsWith('/')) {
-        return `http://10.0.2.2:3000${this.barbier.photoUrl}`;
+        const host = process.env.NODE_ENV === 'production' ? '172.105.3.8' : '10.0.2.2';
+        return `http://${host}:3000${this.barbier.photoUrl}`;
       }
       
       return this.barbier.photoUrl;
@@ -555,6 +556,11 @@ export default {
     
     onNavigatedTo() {
       this.refreshUserInfo();
+    },
+
+    onImageError(imageUrl, context) {
+      console.error('Image loading error:', { imageUrl, context });
+      // You can add additional error handling here if needed
     }
   }
 };

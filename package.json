@@ -1,7 +1,7 @@
 {
-  "name": "PeloStudio",
+  "name": "YanisoStudio",
   "main": "app/app.js",
-  "version": "1.0.1",
+  "version": "1.1.1",
   "private": true,
   "dependencies": {
     "@nativescript/core": "~8.9.0",

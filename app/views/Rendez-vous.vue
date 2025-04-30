@@ -14,7 +14,7 @@ vueCopy<template>
         <Label text="Rendez-vous" class="app-title" />
         <Label :text="'Bonjour, ' + userName" class="welcome-text" />
         <!-- Bouton review -->
-        <Button text="Donnez-nous votre avis" class="review-button" />
+        <Button text="Donnez-nous votre avis" class="review-button" @tap="openPlayStoreReview" />
       </StackLayout>
 
       <!-- Contenu principal -->
@@ -93,6 +93,7 @@ import { rendezVousService, authService, salonService } from '../services/api';
 import { formatAppointmentDate, formatDisplayTime } from '../utils/helpers';
 import { confirm, alert } from '@nativescript/core/ui/dialogs';
 import NavigationBar from '../components/NavigationBar';
+import { openUrl } from '@nativescript/core/utils';
 
 export default {
   components: {
@@ -281,6 +282,17 @@ export default {
       } catch (error) {
         console.error('Error loading salon info:', error);
         // Keep default logo if the API fails
+      }
+    },
+
+    openPlayStoreReview() {
+      const packageName = 'org.nativescript.PeloStudio';
+      const marketUrl = `market://details?id=${packageName}`;
+      const webUrl = `https://play.google.com/store/apps/details?id=${packageName}`;
+      try {
+        openUrl(marketUrl);
+      } catch (e) {
+        openUrl(webUrl);
       }
     }
   }

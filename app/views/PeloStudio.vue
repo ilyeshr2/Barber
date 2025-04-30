@@ -13,7 +13,7 @@
         <StackLayout row="0" class="welcome-container">
           <Label :text="salonName" class="welcome-title" />
           <Label :text="'Bonjour, ' + userName" class="welcome-text" />
-          <Button text="Donnez-nous votre avis" class="review-button" />
+          <Button text="Donnez-nous votre avis" class="review-button" @tap="openPlayStoreReview" />
         </StackLayout>
         
         <!-- Publications -->
@@ -65,6 +65,7 @@
 import { authService, publicationService, salonService } from '../services/api';
 import NavigationBar from '../components/NavigationBar';
 import config from '../utils/config';
+import { openUrl } from '@nativescript/core/utils';
 
 export default {
   components: {
@@ -193,6 +194,17 @@ export default {
     
     onNavigatedTo() {
       this.refreshUserInfo();
+    },
+    
+    openPlayStoreReview() {
+      const packageName = 'org.nativescript.PeloStudio';
+      const marketUrl = `market://details?id=${packageName}`;
+      const webUrl = `https://play.google.com/store/apps/details?id=${packageName}`;
+      try {
+        openUrl(marketUrl);
+      } catch (e) {
+        openUrl(webUrl);
+      }
     }
   }
 };
