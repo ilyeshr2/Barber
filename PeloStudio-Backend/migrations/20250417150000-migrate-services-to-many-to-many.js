@@ -10,9 +10,25 @@ module.exports = {
         { type: Sequelize.QueryTypes.SELECT }
       );
 
-      // Insert records into the junction table for existing services
-      if (services.length > 0) {
-        const serviceBarberRecords = services.map(service => ({
+      // Get existing service-barber relationships
+      const existingRelations = await queryInterface.sequelize.query(
+        'SELECT service_id, barber_id FROM "ServiceBarbers"',
+        { type: Sequelize.QueryTypes.SELECT }
+      );
+
+      // Create a map of existing relationships for quick lookup
+      const existingMap = new Map(
+        existingRelations.map(rel => [`${rel.service_id}-${rel.barber_id}`, true])
+      );
+
+      // Filter out services that already have relationships
+      const newRelations = services.filter(service => 
+        !existingMap.has(`${service.id}-${service.barber_id}`)
+      );
+
+      // Insert only new records into the junction table
+      if (newRelations.length > 0) {
+        const serviceBarberRecords = newRelations.map(service => ({
           service_id: service.id,
           barber_id: service.barber_id,
           created_at: new Date(),
@@ -22,7 +38,7 @@ module.exports = {
         await queryInterface.bulkInsert('ServiceBarbers', serviceBarberRecords);
       }
 
-      console.log(`Migrated ${services.length} services to the many-to-many structure`);
+      console.log(`Migrated ${newRelations.length} new service relationships to the many-to-many structure`);
     } catch (error) {
       console.error('Migration error:', error);
       throw error;
