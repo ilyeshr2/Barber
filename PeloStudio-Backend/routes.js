@@ -13,6 +13,7 @@ const salonController = require('./controllers/salonController');
 const publicationsController = require('./controllers/publicationController');
 const settingsController = require('./controllers/settingsController');
 const directQueriesController = require('./controllers/directQueries');
+const publicationLikeController = require('./controllers/publicationLikeController');
 
 // Import middleware
 const { authenticateToken } = require('./middlewares/authMiddleware');
@@ -36,5 +37,11 @@ router.get('/appointments', authenticateToken, appointmentsController.getUserApp
 router.post('/appointments', authenticateToken, appointmentsController.createAppointment);
 router.put('/appointments/:id/cancel', authenticateToken, appointmentsController.cancelAppointment);
 router.get('/appointments/check-availability', appointmentsController.checkAvailability);
+
+// Publication like routes
+router.post('/publications/:publicationId/like', authenticateToken, publicationLikeController.likePublication);
+router.delete('/publications/:publicationId/like', authenticateToken, publicationLikeController.unlikePublication);
+router.get('/publications/:publicationId/likes', authenticateToken, publicationLikeController.getPublicationLikes);
+router.get('/publications/:publicationId/like-status', authenticateToken, publicationLikeController.getLikeStatus);
 
 module.exports = router;
