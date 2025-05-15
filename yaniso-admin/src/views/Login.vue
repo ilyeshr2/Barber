@@ -3,7 +3,7 @@
     <div class="login-container">
       <div class="login-card">
         <div class="text-center mb-4">
-          <img src="@/assets/logo.png" alt="Yaniso Studio Logo" height="80">
+          <img src="@/assets/yaniso-logo.png" alt="Yaniso Studio Logo" height="80">
           <h2 class="mt-3">Admin Access</h2>
         </div>
   
